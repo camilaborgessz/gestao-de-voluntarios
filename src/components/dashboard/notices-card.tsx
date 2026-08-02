@@ -1,10 +1,12 @@
+import { Pencil, Trash2 } from "lucide-react";
+
 export interface Notice {
   message: string;
   postedAt: string;
   author: string;
 }
 
-export function NoticesCard({ notices }: { notices: Notice[] }) {
+export function NoticesCard({ notices, editable = false }: { notices: Notice[]; editable?: boolean }) {
   return (
     <div className="flex flex-col gap-3 rounded-[10px] bg-gradient-to-b from-lime-from to-lime-to p-5 shadow-[0_4px_16px_rgba(0,0,0,0.1)]">
       {notices.map((notice, index) => (
@@ -22,6 +24,22 @@ export function NoticesCard({ notices }: { notices: Notice[] }) {
               {notice.author}
             </p>
           </div>
+          {editable && (
+            <div className="flex shrink-0 items-start gap-1.5">
+              <button
+                title="Apagar"
+                className="flex size-7 items-center justify-center rounded-full bg-gradient-to-b from-lime-from to-lime-to text-brand hover:brightness-95"
+              >
+                <Trash2 size={14} />
+              </button>
+              <button
+                title="Editar"
+                className="flex size-7 items-center justify-center rounded-full bg-gradient-to-b from-lime-from to-lime-to text-brand hover:brightness-95"
+              >
+                <Pencil size={14} />
+              </button>
+            </div>
+          )}
         </div>
       ))}
 

@@ -4,20 +4,20 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
-  CalendarDays,
-  Grid2x2,
-  CalendarPlus,
-  Users,
-  CircleUser,
-  LogOut,
-} from "lucide-react";
+  PainelIcon,
+  AgendaIcon,
+  NovoEventoIcon,
+  VoluntariosIcon,
+  PerfilIcon,
+  LogoutIcon,
+} from "./sidebar-icons";
 
 const navItems = [
-  { href: "/dashboard", label: "Painel", icon: CalendarDays },
-  { href: "/dashboard/agenda", label: "Agenda", icon: Grid2x2 },
-  { href: "/dashboard/eventos/novo", label: "Novo evento", icon: CalendarPlus },
-  { href: "/dashboard/voluntarios", label: "Voluntários", icon: Users },
-  { href: "/dashboard/perfil", label: "Perfil", icon: CircleUser },
+  { href: "/dashboard", label: "Painel", icon: PainelIcon },
+  { href: "/dashboard/agenda", label: "Agenda", icon: AgendaIcon },
+  { href: "/dashboard/eventos/novo", label: "Novo evento", icon: NovoEventoIcon },
+  { href: "/dashboard/voluntarios", label: "Voluntários", icon: VoluntariosIcon },
+  { href: "/dashboard/perfil", label: "Perfil", icon: PerfilIcon },
 ] as const;
 
 export function Sidebar() {
@@ -38,11 +38,11 @@ export function Sidebar() {
                 title={label}
                 className={`flex size-11 items-center justify-center rounded-2xl transition-colors ${
                   active
-                    ? "bg-gradient-to-b from-lime-from to-lime-to text-brand shadow-md"
+                    ? "bg-gradient-to-b from-lime-from to-lime-to text-[#1d2326] shadow-md"
                     : "text-lime-from hover:text-lime-to"
                 }`}
               >
-                <Icon size={22} strokeWidth={2} />
+                <Icon size={22} />
               </Link>
             );
           })}
@@ -53,9 +53,9 @@ export function Sidebar() {
 
       <button
         title="Sair"
-        className="mb-10 flex size-11 items-center justify-center rounded-2xl text-brand hover:bg-brand/10"
+        className="mb-10 flex size-11 items-center justify-center rounded-full bg-success-from/25 text-ink hover:bg-success-from/40"
       >
-        <LogOut size={22} strokeWidth={2} />
+        <LogoutIcon size={22} />
       </button>
     </aside>
   );

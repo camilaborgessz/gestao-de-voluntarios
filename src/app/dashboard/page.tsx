@@ -60,12 +60,13 @@ const notices: Notice[] = [
 export default async function DashboardPage() {
   const session = await auth();
   const firstName = session?.user?.name?.split(" ")[0] ?? "voluntário(a)";
-  const isAdmin = session?.user?.role ? session.user.role === "ADMIN" : true;
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="text-2xl text-brand lg:text-3xl">Bem-vindo (a), {firstName}</p>
+        <p className="text-sm font-semibold uppercase tracking-wide text-brand/75">
+          Bem-vindo (a), {firstName}
+        </p>
         <h1 className="text-3xl font-semibold text-ink lg:text-4xl">
           Como está sua agenda hoje?
         </h1>
@@ -82,10 +83,10 @@ export default async function DashboardPage() {
 
           <div className="flex flex-col gap-4 rounded-[10px] bg-white p-5 shadow-[0_4px_37px_rgba(0,0,0,0.1)]">
             {upcomingEvents.map((event, index) => (
-              <EventCard key={index} {...event} isAdmin={isAdmin} />
+              <EventCard key={index} {...event} isAdmin />
             ))}
 
-            <button className="self-end rounded-full bg-lime-from/40 px-5 py-1.5 text-xs font-medium text-ink hover:bg-lime-from/60 lg:text-sm">
+            <button className="self-end rounded-full bg-success-from/25 px-5 py-1.5 text-xs font-medium text-ink hover:bg-success-from/40 lg:text-sm">
               Ver mais
             </button>
           </div>
