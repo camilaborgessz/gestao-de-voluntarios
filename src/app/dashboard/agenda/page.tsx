@@ -56,7 +56,7 @@ export default function AgendaPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-semibold text-ink lg:text-4xl">Calendário e escalas</h1>
-        <button className="flex items-center gap-2 rounded-full border border-ink bg-brand px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-dark">
+        <button className="flex items-center gap-2 rounded-full border border-ink bg-brand px-5 py-2.5 text-sm font-bold text-white transition duration-150 ease-out hover:scale-105 hover:bg-brand-dark active:scale-95">
           <Plus size={18} />
           Novo Usuário
         </button>
@@ -65,10 +65,16 @@ export default function AgendaPage() {
       <div className="rounded-[10px] bg-white p-6 shadow-[0_4px_30px_rgba(0,0,0,0.18)]">
         <div className="mb-4 flex items-center gap-2">
           <h2 className="text-xl font-semibold text-ink">Abril</h2>
-          <button title="Mês anterior" className="text-ink/70 hover:text-ink">
+          <button
+            title="Mês anterior"
+            className="rounded-full p-0.5 text-ink/70 transition duration-150 ease-out hover:scale-125 hover:text-ink active:scale-90"
+          >
             <ChevronLeft size={16} />
           </button>
-          <button title="Próximo mês" className="text-ink/70 hover:text-ink">
+          <button
+            title="Próximo mês"
+            className="rounded-full p-0.5 text-ink/70 transition duration-150 ease-out hover:scale-125 hover:text-ink active:scale-90"
+          >
             <ChevronRight size={16} />
           </button>
           <span className="flex size-6 items-center justify-center rounded-full bg-lime-from/70 text-xs font-medium text-brand">

@@ -24,7 +24,10 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-[89px] bottom-0 z-20 flex w-[76px] flex-col items-center text-brand">
+    <aside
+      className="fixed left-0 top-[89px] bottom-0 z-20 flex w-[76px] flex-col items-center text-brand"
+      style={{ viewTransitionName: "dash-sidebar" }}
+    >
       <div className="flex w-[76px] flex-1 flex-col justify-center">
         <Image src="/sidebar-cap-top.png" alt="" width={76} height={129} className="block" />
 
@@ -36,7 +39,7 @@ export function Sidebar() {
                 key={href}
                 href={href}
                 title={label}
-                className={`flex size-11 items-center justify-center rounded-2xl transition-colors ${
+                className={`flex size-11 items-center justify-center rounded-2xl transition-all duration-200 ease-out hover:scale-110 active:scale-95 ${
                   active
                     ? "bg-gradient-to-b from-lime-from to-lime-to text-[#1d2326] shadow-md"
                     : "text-lime-from hover:text-lime-to"
@@ -53,7 +56,7 @@ export function Sidebar() {
 
       <button
         title="Sair"
-        className="mb-10 flex size-11 items-center justify-center rounded-full bg-success-from/25 text-ink hover:bg-success-from/40"
+        className="mb-10 flex size-11 items-center justify-center rounded-full bg-success-from/25 text-ink transition-all duration-200 ease-out hover:scale-110 hover:bg-success-from/40 active:scale-95"
       >
         <LogoutIcon size={22} />
       </button>

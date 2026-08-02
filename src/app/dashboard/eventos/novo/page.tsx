@@ -29,7 +29,7 @@ function AddButton({ label }: { label: string }) {
   return (
     <button
       title={label}
-      className="flex size-6 items-center justify-center rounded-full bg-gradient-to-b from-lime-from to-lime-to text-brand hover:brightness-95"
+      className="flex size-6 items-center justify-center rounded-full bg-gradient-to-b from-lime-from to-lime-to text-brand transition duration-150 ease-out hover:scale-110 hover:brightness-95 active:scale-95"
     >
       <Plus size={14} strokeWidth={2.5} />
     </button>
@@ -56,7 +56,9 @@ export default function GestaoPage() {
               <EventManageRow key={index} {...event} />
             ))}
 
-            <button className="self-end text-xs font-medium text-ink hover:underline">Ver mais</button>
+            <button className="self-end text-xs font-medium text-ink transition-colors duration-150 hover:text-brand hover:underline">
+              Ver mais
+            </button>
           </div>
         </section>
 
@@ -71,14 +73,20 @@ export default function GestaoPage() {
               {uniforms.map((label, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between gap-2 rounded-full bg-gradient-to-r from-white to-bg px-4 py-2"
+                  className="flex items-center justify-between gap-2 rounded-full bg-gradient-to-r from-white to-bg px-4 py-2 transition-shadow duration-150 hover:shadow-md"
                 >
                   <span className="truncate text-sm font-semibold text-ink">{label}</span>
                   <div className="flex shrink-0 items-center gap-2 text-ink/70">
-                    <button title="Apagar" className="hover:text-ink">
+                    <button
+                      title="Apagar"
+                      className="transition duration-150 ease-out hover:scale-125 hover:text-ink active:scale-90"
+                    >
                       <Trash2 size={16} />
                     </button>
-                    <button title="Editar" className="hover:text-ink">
+                    <button
+                      title="Editar"
+                      className="transition duration-150 ease-out hover:scale-125 hover:text-ink active:scale-90"
+                    >
                       <Pencil size={16} />
                     </button>
                   </div>

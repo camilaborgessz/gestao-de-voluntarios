@@ -32,7 +32,10 @@ export function UserTable({ users }: { users: UserRow[] }) {
 
       <div className="divide-y divide-brand/40">
         {users.map((user, index) => (
-          <div key={index} className={`grid ${columns} items-center gap-2 px-6 py-4`}>
+          <div
+            key={index}
+            className={`grid ${columns} items-center gap-2 px-6 py-4 transition-colors duration-150 hover:bg-brand/5`}
+          >
             <span className="truncate text-sm font-semibold text-ink">{user.name}</span>
             <span className="truncate text-sm font-medium text-ink">{user.birthDate}</span>
             <span className="truncate text-sm font-medium text-ink">{user.phone}</span>
@@ -43,7 +46,7 @@ export function UserTable({ users }: { users: UserRow[] }) {
                 <button
                   key={label}
                   title={label}
-                  className="flex size-8 items-center justify-center rounded-full bg-gradient-to-b from-lime-from to-lime-to text-brand shadow-[0_2px_6px_rgba(0,0,0,0.12)] hover:brightness-95"
+                  className="flex size-8 items-center justify-center rounded-full bg-gradient-to-b from-lime-from to-lime-to text-brand shadow-[0_2px_6px_rgba(0,0,0,0.12)] transition duration-150 ease-out hover:scale-110 hover:brightness-95 active:scale-95"
                 >
                   <Icon size={15} strokeWidth={2.5} />
                 </button>

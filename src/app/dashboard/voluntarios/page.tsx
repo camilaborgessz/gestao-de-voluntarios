@@ -15,7 +15,7 @@ export default function VoluntariosPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-semibold text-ink lg:text-4xl">Gerenciar usuários</h1>
-        <button className="flex items-center gap-2 rounded-full border border-ink bg-brand px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-dark">
+        <button className="flex items-center gap-2 rounded-full border border-ink bg-brand px-5 py-2.5 text-sm font-bold text-white transition duration-150 ease-out hover:scale-105 hover:bg-brand-dark active:scale-95">
           <Plus size={18} />
           Novo Usuário
         </button>

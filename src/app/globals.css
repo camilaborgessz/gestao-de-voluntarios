@@ -29,3 +29,56 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+/* Dashboard route transitions (Next.js View Transitions) */
+::view-transition-old(.dash-content) {
+  animation: 150ms ease-out both dash-fade-out, 150ms ease-out both dash-slide-out;
+}
+::view-transition-new(.dash-content) {
+  animation: 220ms ease-in 100ms both dash-fade-in, 260ms ease-out both dash-slide-in;
+}
+
+@keyframes dash-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes dash-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes dash-slide-out {
+  to {
+    transform: translateY(6px);
+  }
+}
+@keyframes dash-slide-in {
+  from {
+    transform: translateY(10px);
+  }
+}
+
+/* Keep the sidebar and topbar fixed in place during route transitions */
+::view-transition-group(dash-sidebar),
+::view-transition-group(dash-topbar) {
+  animation: none;
+  z-index: 30;
+}
+::view-transition-old(dash-sidebar),
+::view-transition-old(dash-topbar) {
+  display: none;
+}
+::view-transition-new(dash-sidebar),
+::view-transition-new(dash-topbar) {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}

@@ -57,7 +57,7 @@ export function CalendarGrid({ weeks }: { weeks: CalendarDay[][] }) {
                 return (
                   <div
                     key={i}
-                    className="group relative flex items-center gap-1.5 rounded-full bg-gradient-to-r from-brand to-brand-dark py-2 pl-2.5 pr-1"
+                    className="group relative flex items-center gap-1.5 rounded-full bg-gradient-to-r from-brand to-brand-dark py-2 pl-2.5 pr-1 transition-shadow duration-150 hover:shadow-[0_4px_12px_rgba(2,87,92,0.35)]"
                   >
                     <span className={`size-2 shrink-0 rounded-full bg-gradient-to-b ${statusDot[status]}`} />
                     <div className="min-w-0 flex-1 pr-4">
@@ -68,7 +68,7 @@ export function CalendarGrid({ weeks }: { weeks: CalendarDay[][] }) {
                     </div>
                     <button
                       title="Opções"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full p-1 text-white/70 hover:bg-white/10 hover:text-white"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full p-1 text-white/70 transition duration-150 ease-out hover:scale-110 hover:bg-white/10 hover:text-white active:scale-95"
                     >
                       <MoreVertical size={14} />
                     </button>

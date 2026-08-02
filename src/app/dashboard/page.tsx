@@ -86,7 +86,7 @@ export default async function DashboardPage() {
               <EventCard key={index} {...event} isAdmin />
             ))}
 
-            <button className="self-end rounded-full bg-success-from/25 px-5 py-1.5 text-xs font-medium text-ink hover:bg-success-from/40 lg:text-sm">
+            <button className="self-end rounded-full bg-success-from/25 px-5 py-1.5 text-xs font-medium text-ink transition duration-150 ease-out hover:scale-105 hover:bg-success-from/40 active:scale-95 lg:text-sm">
               Ver mais
             </button>
           </div>

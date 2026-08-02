@@ -20,7 +20,7 @@ export default async function PerfilPage() {
               <input
                 type="text"
                 defaultValue={name}
-                className="rounded-[5px] border border-[#6e9193] bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-brand"
+                className="rounded-[5px] border border-[#6e9193] bg-white px-3 py-2.5 text-sm text-ink outline-none transition-colors duration-150 focus:border-brand"
               />
             </label>
 
@@ -29,7 +29,7 @@ export default async function PerfilPage() {
               <input
                 type="email"
                 defaultValue={email}
-                className="rounded-[5px] border border-[#6e9193] bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-brand"
+                className="rounded-[5px] border border-[#6e9193] bg-white px-3 py-2.5 text-sm text-ink outline-none transition-colors duration-150 focus:border-brand"
               />
             </label>
 
@@ -39,7 +39,7 @@ export default async function PerfilPage() {
                 <input
                   type="date"
                   defaultValue="2005-03-16"
-                  className="rounded-[5px] border border-[#6e9193] bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-brand"
+                  className="rounded-[5px] border border-[#6e9193] bg-white px-3 py-2.5 text-sm text-ink outline-none transition-colors duration-150 focus:border-brand"
                 />
               </label>
 
@@ -48,13 +48,13 @@ export default async function PerfilPage() {
                 <input
                   type="tel"
                   defaultValue="(69) 99239-0000"
-                  className="rounded-[5px] border border-[#6e9193] bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-brand"
+                  className="rounded-[5px] border border-[#6e9193] bg-white px-3 py-2.5 text-sm text-ink outline-none transition-colors duration-150 focus:border-brand"
                 />
               </label>
             </div>
           </div>
 
-          <button className="mt-4 ml-auto flex items-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-dark px-6 py-2.5 text-sm font-bold text-white hover:brightness-110">
+          <button className="mt-4 ml-auto flex items-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-dark px-6 py-2.5 text-sm font-bold text-white transition duration-150 ease-out hover:scale-105 hover:brightness-110 active:scale-95">
             <Pencil size={16} />
             Editar Perfil
           </button>
@@ -69,7 +69,7 @@ export default async function PerfilPage() {
               <input
                 type="password"
                 defaultValue="password123"
-                className="rounded-[5px] border border-[#6e9193] bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-lime-from"
+                className="rounded-[5px] border border-[#6e9193] bg-white px-3 py-2.5 text-sm text-ink outline-none transition-colors duration-150 focus:border-lime-from"
               />
             </label>
 
@@ -78,7 +78,7 @@ export default async function PerfilPage() {
               <input
                 type="password"
                 placeholder="***********"
-                className="rounded-[5px] border border-[#6e9193] bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-lime-from"
+                className="rounded-[5px] border border-[#6e9193] bg-white px-3 py-2.5 text-sm text-ink outline-none transition-colors duration-150 focus:border-lime-from"
               />
             </label>
 
@@ -87,12 +87,12 @@ export default async function PerfilPage() {
               <input
                 type="password"
                 placeholder="***********"
-                className="rounded-[5px] border border-[#6e9193] bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-lime-from"
+                className="rounded-[5px] border border-[#6e9193] bg-white px-3 py-2.5 text-sm text-ink outline-none transition-colors duration-150 focus:border-lime-from"
               />
             </label>
           </div>
 
-          <button className="mt-4 ml-auto flex items-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-dark px-6 py-2.5 text-sm font-bold text-white hover:brightness-110">
+          <button className="mt-4 ml-auto flex items-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-dark px-6 py-2.5 text-sm font-bold text-white transition duration-150 ease-out hover:scale-105 hover:brightness-110 active:scale-95">
             <Pencil size={16} />
             Alterar Senha
           </button>

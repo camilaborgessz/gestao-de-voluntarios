@@ -28,13 +28,13 @@ export function NoticesCard({ notices, editable = false }: { notices: Notice[]; 
             <div className="flex shrink-0 items-start gap-1.5">
               <button
                 title="Apagar"
-                className="flex size-7 items-center justify-center rounded-full bg-gradient-to-b from-lime-from to-lime-to text-brand hover:brightness-95"
+                className="flex size-7 items-center justify-center rounded-full bg-gradient-to-b from-lime-from to-lime-to text-brand transition duration-150 ease-out hover:scale-110 hover:brightness-95 active:scale-95"
               >
                 <Trash2 size={14} />
               </button>
               <button
                 title="Editar"
-                className="flex size-7 items-center justify-center rounded-full bg-gradient-to-b from-lime-from to-lime-to text-brand hover:brightness-95"
+                className="flex size-7 items-center justify-center rounded-full bg-gradient-to-b from-lime-from to-lime-to text-brand transition duration-150 ease-out hover:scale-110 hover:brightness-95 active:scale-95"
               >
                 <Pencil size={14} />
               </button>
@@ -43,7 +43,7 @@ export function NoticesCard({ notices, editable = false }: { notices: Notice[]; 
         </div>
       ))}
 
-      <button className="self-end rounded-full bg-white px-5 py-1.5 text-xs font-medium text-ink hover:bg-white/80 lg:text-sm">
+      <button className="self-end rounded-full bg-white px-5 py-1.5 text-xs font-medium text-ink transition duration-150 ease-out hover:scale-105 hover:bg-white/80 active:scale-95 lg:text-sm">
         Ver mais
       </button>
     </div>
