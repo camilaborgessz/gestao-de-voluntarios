@@ -11,6 +11,9 @@ export interface EventCardProps {
   filled: number;
   capacity: number;
   isAdmin?: boolean;
+  onView?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 const statusConfig: Record<
@@ -41,13 +44,6 @@ function getStatus(filled: number, capacity: number): EventStatus {
   return "danger";
 }
 
-const adminActions = [
-  { label: "Baixar", icon: Download },
-  { label: "Apagar", icon: Trash2 },
-  { label: "Editar", icon: Pencil },
-  { label: "Visualizar", icon: Eye },
-];
-
 export function EventCard({
   date,
   weekday,
@@ -57,13 +53,22 @@ export function EventCard({
   filled,
   capacity,
   isAdmin = false,
+  onView,
+  onEdit,
+  onDelete,
 }: EventCardProps) {
+  const adminActions = [
+    { label: "Baixar", icon: Download, onClick: undefined },
+    { label: "Apagar", icon: Trash2, onClick: onDelete },
+    { label: "Editar", icon: Pencil, onClick: onEdit },
+    { label: "Visualizar", icon: Eye, onClick: onView },
+  ];
   const status = getStatus(filled, capacity);
   const config = statusConfig[status];
   const progress = Math.min(100, (filled / capacity) * 100);
 
   return (
-    <div className="flex flex-col gap-4 rounded-[10px] border border-brand/[0.17] bg-white p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] transition-shadow duration-200 hover:shadow-[0_6px_20px_rgba(0,0,0,0.1)] sm:min-h-[120px] sm:flex-row sm:items-center sm:gap-6">
+    <div className="flex flex-col gap-4 rounded-[10px] border border-brand/[0.17] bg-surface p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] transition-shadow duration-200 hover:shadow-[0_6px_20px_rgba(0,0,0,0.1)] dark:border-white/10 dark:bg-surface-raised dark:shadow-[0_4px_18px_rgba(0,0,0,0.35)] sm:min-h-[120px] sm:flex-row sm:items-center sm:gap-6">
       <div className="flex items-center gap-4 sm:w-[170px] sm:flex-col sm:items-center sm:gap-2 sm:text-center">
         <p className="font-display text-4xl font-bold leading-none text-ink lg:text-5xl">
           {date}
@@ -73,7 +78,7 @@ export function EventCard({
         </span>
       </div>
 
-      <div className="hidden h-[90px] w-0.5 rounded-full bg-brand sm:block" />
+      <div className="hidden h-[90px] w-0.5 rounded-full bg-brand dark:bg-white/15 sm:block" />
 
       <div className="flex-1">
         <p className="text-lg font-medium text-ink lg:text-xl">{title}</p>
@@ -81,7 +86,7 @@ export function EventCard({
           {tags.map((tag) => (
             <span
               key={tag}
-              className="rounded-full bg-gradient-to-r from-brand to-brand-dark px-3 py-1.5 text-xs font-semibold text-white lg:text-sm"
+              className="rounded-full bg-gradient-to-r from-brand to-brand-dark px-3 py-1.5 text-xs font-semibold text-white dark:from-[#12a3ab] dark:to-brand lg:text-sm"
             >
               {tag}
             </span>
@@ -104,10 +109,11 @@ export function EventCard({
         </div>
         {isAdmin ? (
           <div className="mt-1 flex w-full justify-between">
-            {adminActions.map(({ label, icon: Icon }) => (
+            {adminActions.map(({ label, icon: Icon, onClick }) => (
               <button
                 key={label}
                 title={label}
+                onClick={onClick}
                 className="flex size-9 items-center justify-center rounded-full bg-gradient-to-b from-lime-from to-lime-to text-brand shadow-[0_2px_6px_rgba(0,0,0,0.12)] transition duration-150 ease-out hover:scale-110 hover:brightness-95 active:scale-95"
               >
                 <Icon size={18} strokeWidth={2.5} />

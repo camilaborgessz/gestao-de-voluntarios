@@ -15,7 +15,7 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "Gestão de Voluntários",
+  title: "Koinonia",
   description: "Plataforma de gestão de voluntários e projetos sociais",
 };
 
@@ -27,8 +27,17 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
+      data-theme="light"
+      suppressHydrationWarning
       className={`${poppins.variable} ${nunito.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-bg font-sans text-ink">{children}</body>
     </html>
   );

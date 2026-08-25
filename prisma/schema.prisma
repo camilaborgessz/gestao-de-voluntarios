@@ -12,7 +12,6 @@ datasource db {
 
 enum Role {
   ADMIN
-  COORDINATOR
   VOLUNTEER
 }
 
@@ -24,74 +23,81 @@ enum EnrollmentStatus {
   NO_SHOW
 }
 
-enum ProjectStatus {
-  DRAFT
-  ACTIVE
-  ARCHIVED
-}
-
 model User {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   name         String
-  email        String   @unique
+  email        String     @unique
   passwordHash String
-  role         Role     @default(VOLUNTEER)
+  role         Role       @default(VOLUNTEER)
   phone        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  birthDate    DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   enrollments  Enrollment[]
-  ledProjects  Project[]    @relation("ProjectCoordinator")
 
   @@index([role])
 }
 
-model Project {
-  id            String        @id @default(cuid())
-  name          String
-  description   String?
-  status        ProjectStatus @default(DRAFT)
-  coordinatorId String?
-  coordinator   User?         @relation("ProjectCoordinator", fields: [coordinatorId], references: [id])
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
-  opportunities Opportunity[]
-
-  @@index([status])
+model Uniform {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
 }
 
-model Opportunity {
-  id          String   @id @default(cuid())
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  title       String
-  description String?
-  location    String?
-  startsAt    DateTime
-  endsAt      DateTime
-  capacity    Int      @default(1)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model Notice {
+  id            String   @id @default(cuid())
+  message       String
+  author        String
+  visibleFrom   DateTime
+  visibleUntil  DateTime
+  createdAt     DateTime @default(now())
+
+  @@index([visibleFrom, visibleUntil])
+}
+
+model Event {
+  id        String   @id @default(cuid())
+  title     String
+  startsAt  DateTime
+  capacity  Int      @default(1)
+  dressCode String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   enrollments Enrollment[]
+  slots       EventSlot[]
 
-  @@index([projectId])
   @@index([startsAt])
 }
 
-model Enrollment {
-  id            String           @id @default(cuid())
-  userId        String
-  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  opportunityId String
-  opportunity   Opportunity      @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
-  status        EnrollmentStatus @default(PENDING)
-  checkInAt     DateTime?
-  checkOutAt    DateTime?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+model EventSlot {
+  id       String  @id @default(cuid())
+  eventId  String
+  event    Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  label    String
+  location String?
+  order    Int     @default(0)
 
-  @@unique([userId, opportunityId])
+  enrollments Enrollment[]
+
+  @@index([eventId])
+}
+
+model Enrollment {
+  id         String           @id @default(cuid())
+  userId     String
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId    String
+  event      Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  slotId     String?
+  slot       EventSlot?       @relation(fields: [slotId], references: [id], onDelete: SetNull)
+  status     EnrollmentStatus @default(PENDING)
+  checkInAt  DateTime?
+  checkOutAt DateTime?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([userId, eventId])
   @@index([status])
 }

@@ -1,16 +1,31 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
   --background: #f3f6f6;
   --foreground: #16302c;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --track: #ededed;
+}
+
+[data-theme="dark"] {
+  --background: #10201d;
+  --foreground: #e8efed;
+  --surface: #20413b;
+  --surface-raised: #2b554d;
+  --track: #2a4d46;
 }
 
 @theme inline {
-  --color-bg: #f3f6f6;
-  --color-ink: #16302c;
+  --color-bg: var(--background);
+  --color-ink: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
   --color-brand: #02575c;
   --color-brand-dark: #16302c;
-  --color-track: #ededed;
+  --color-track: var(--track);
 
   --color-success-from: #58bb89;
   --color-success-to: #2e9461;
@@ -28,6 +43,15 @@
 body {
   background: var(--background);
   color: var(--foreground);
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+button:not(:disabled),
+[role="button"] {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
 }
 
 /* Dashboard route transitions (Next.js View Transitions) */

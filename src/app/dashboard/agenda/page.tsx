@@ -51,6 +51,7 @@ const weeks: CalendarDay[][] = [
 
 export default function AgendaPage() {
   const eventCount = weeks.flat().reduce((sum, day) => sum + (day.events?.length ?? 0), 0);
+  const today = new Date().getDate();
 
   return (
     <div className="flex flex-col gap-6">
@@ -62,7 +63,7 @@ export default function AgendaPage() {
         </button>
       </div>
 
-      <div className="rounded-[10px] bg-white p-6 shadow-[0_4px_30px_rgba(0,0,0,0.18)]">
+      <div className="rounded-[10px] bg-surface p-6 shadow-[0_4px_30px_rgba(0,0,0,0.18)]">
         <div className="mb-4 flex items-center gap-2">
           <h2 className="text-xl font-semibold text-ink">Abril</h2>
           <button
@@ -82,7 +83,7 @@ export default function AgendaPage() {
           </span>
         </div>
 
-        <CalendarGrid weeks={weeks} />
+        <CalendarGrid weeks={weeks} today={today} />
       </div>
     </div>
   );

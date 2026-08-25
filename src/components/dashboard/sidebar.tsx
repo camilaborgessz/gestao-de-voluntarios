@@ -11,6 +11,7 @@ import {
   PerfilIcon,
   LogoutIcon,
 } from "./sidebar-icons";
+import { NavLinkSpinner } from "./nav-link-spinner";
 
 const navItems = [
   { href: "/dashboard", label: "Painel", icon: PainelIcon },
@@ -29,7 +30,7 @@ export function Sidebar() {
       style={{ viewTransitionName: "dash-sidebar" }}
     >
       <div className="flex w-[76px] flex-1 flex-col justify-center">
-        <Image src="/sidebar-cap-top.png" alt="" width={76} height={129} className="block" />
+        <Image src="/sidebar-cap-top.png" alt="" width={76} height={129} className="block" unoptimized />
 
         <nav className="flex w-full -ml-px flex-col items-center gap-4 bg-brand">
           {navItems.map(({ href, label, icon: Icon }) => {
@@ -39,19 +40,20 @@ export function Sidebar() {
                 key={href}
                 href={href}
                 title={label}
-                className={`flex size-11 items-center justify-center rounded-2xl transition-all duration-200 ease-out hover:scale-110 active:scale-95 ${
+                className={`relative flex size-11 items-center justify-center rounded-2xl transition-all duration-200 ease-out hover:scale-110 active:scale-95 ${
                   active
                     ? "bg-gradient-to-b from-lime-from to-lime-to text-[#1d2326] shadow-md"
                     : "text-lime-from hover:text-lime-to"
                 }`}
               >
                 <Icon size={22} />
+                <NavLinkSpinner />
               </Link>
             );
           })}
         </nav>
 
-        <Image src="/sidebar-cap-bottom.png" alt="" width={76} height={129} className="block" />
+        <Image src="/sidebar-cap-bottom.png" alt="" width={76} height={129} className="block" unoptimized />
       </div>
 
       <button
