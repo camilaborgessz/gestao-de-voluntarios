@@ -1,3 +1,5 @@
+import { wallClockNow } from "@/lib/event-schedule";
+
 const REFERENCES = [
   { book: "josue", chapter: 1, verse: 9, label: "Josué 1:9" },
   { book: "salmos", chapter: 23, verse: 1, label: "Salmos 23:1" },
@@ -46,12 +48,12 @@ function dayOfYear(date: Date) {
 }
 
 export async function getVerseOfTheDay() {
-  const reference = REFERENCES[dayOfYear(new Date()) % REFERENCES.length];
+  const reference = REFERENCES[dayOfYear(wallClockNow()) % REFERENCES.length];
 
   try {
     const res = await fetch(
       `https://api.midvash.com/v1/nvi/${reference.book}/${reference.chapter}/${reference.verse}`,
-      { next: { revalidate: 86_400 } },
+      { next: { revalidate: 86_400 }, signal: AbortSignal.timeout(4000) },
     );
     if (!res.ok) return FALLBACK;
 

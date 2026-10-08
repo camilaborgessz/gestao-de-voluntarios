@@ -65,7 +65,8 @@ export function UserManagement({ users }: { users: UserRecord[] }) {
 
       {dialog.mode === "delete" && (
         <ConfirmDialog
-          message={`Tem certeza que deseja excluir "${dialog.user.name}"?`}
+          title="Excluir usuário?"
+          description={`"${dialog.user.name}" perderá o acesso ao sistema. Esta ação não pode ser desfeita.`}
           isLoading={isDeleting}
           onCancel={() => setDialog({ mode: "closed" })}
           onConfirm={confirmDelete}

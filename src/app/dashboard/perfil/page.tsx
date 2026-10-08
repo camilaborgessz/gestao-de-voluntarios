@@ -12,7 +12,7 @@ export default async function PerfilPage() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { name: true, email: true, phone: true, birthDate: true },
+    select: { name: true, email: true, phone: true, birthDate: true, helpMode: true, spouseName: true },
   });
   if (!user) {
     redirect("/login");
@@ -23,7 +23,7 @@ export default async function PerfilPage() {
       <h1 className="text-3xl font-semibold text-ink lg:text-4xl">Gerenciar perfil</h1>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <ProfileForm user={user} />
+        <ProfileForm user={user} showHelpMode={session.user.role === "VOLUNTEER"} />
         <PasswordForm />
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Plus } from "lucide-react";
+import type { EventScheduleView } from "@/lib/event-schedule-view";
 import { EventManageRow } from "./event-manage-row";
 import { EventFormDialog } from "./event-form-dialog";
 import { EventViewDialog } from "./event-view-dialog";
@@ -16,6 +17,16 @@ export interface EventRecord {
   capacity: number;
   dressCode: string[];
   filled?: number;
+  /** Aviso específico do evento (escrito pela líder na página da escala). */
+  note?: string | null;
+  /** Heading of the schedule image (defaults to the church's standard title). */
+  scheduleTitle?: string | null;
+  /** Volunteer view: the schedule (escala) the leader already put together. */
+  schedule?: EventScheduleView[];
+  /** Volunteer view: whether the signed-in volunteer already took a spot. */
+  joined?: boolean;
+  /** How the volunteer signed up for this event (alone or with spouse). */
+  joinedMode?: "INDIVIDUAL" | "COUPLE";
 }
 
 type DialogState =
@@ -27,13 +38,24 @@ type DialogState =
 
 export function EventManagement({ events, uniforms }: { events: EventRecord[]; uniforms: string[] }) {
   const [dialog, setDialog] = useState<DialogState>({ mode: "closed" });
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, startDeleteTransition] = useTransition();
+
+  function openDialog(next: DialogState) {
+    setDeleteError(null);
+    setDialog(next);
+  }
 
   function confirmDelete() {
     if (dialog.mode !== "delete") return;
     const { event } = dialog;
+    setDeleteError(null);
     startDeleteTransition(async () => {
-      await deleteEvent(event.id);
+      const result = await deleteEvent(event.id);
+      if (result?.error) {
+        setDeleteError(result.error);
+        return;
+      }
       setDialog({ mode: "closed" });
     });
   }
@@ -47,7 +69,7 @@ export function EventManagement({ events, uniforms }: { events: EventRecord[]; u
         </span>
         <button
           title="Novo evento"
-          onClick={() => setDialog({ mode: "create" })}
+          onClick={() => openDialog({ mode: "create" })}
           className="flex size-6 items-center justify-center rounded-full bg-gradient-to-b from-lime-from to-lime-to text-brand transition duration-150 ease-out hover:scale-110 hover:brightness-95 active:scale-95"
         >
           <Plus size={14} strokeWidth={2.5} />
@@ -55,7 +77,7 @@ export function EventManagement({ events, uniforms }: { events: EventRecord[]; u
       </div>
 
       <div className="flex flex-col gap-4 rounded-[10px] bg-surface p-5 shadow-[0_4px_37px_rgba(0,0,0,0.1)]">
-        {events.length === 0 && <p className="text-sm text-ink/60">Nenhum evento cadastrado ainda.</p>}
+        {events.length === 0 && <p className="text-sm text-ink/60">Nenhum evento programado. Eventos que já passaram ficam em Arquivados.</p>}
 
         {events.map((event) => (
           <EventManageRow
@@ -63,9 +85,7 @@ export function EventManagement({ events, uniforms }: { events: EventRecord[]; u
             {...formatEventSchedule(event.startsAt)}
             title={event.title}
             tags={event.dressCode}
-            onView={() => setDialog({ mode: "view", event })}
-            onEdit={() => setDialog({ mode: "edit", event })}
-            onDelete={() => setDialog({ mode: "delete", event })}
+            onView={() => openDialog({ mode: "view", event })}
           />
         ))}
 
@@ -80,23 +100,27 @@ export function EventManagement({ events, uniforms }: { events: EventRecord[]; u
         <EventFormDialog
           event={dialog.mode === "edit" ? dialog.event : null}
           uniforms={uniforms}
-          onClose={() => setDialog({ mode: "closed" })}
+          onClose={() => openDialog({ mode: "closed" })}
         />
       )}
 
       {dialog.mode === "view" && (
         <EventViewDialog
           event={dialog.event}
-          onClose={() => setDialog({ mode: "closed" })}
-          onEdit={() => setDialog({ mode: "edit", event: dialog.event })}
+          onClose={() => openDialog({ mode: "closed" })}
+          onEdit={() => openDialog({ mode: "edit", event: dialog.event })}
+          onDelete={() => openDialog({ mode: "delete", event: dialog.event })}
+          scheduleHref={`/dashboard/escala/${dialog.event.id}`}
         />
       )}
 
       {dialog.mode === "delete" && (
         <ConfirmDialog
-          message={`Tem certeza que deseja excluir "${dialog.event.title}"?`}
+          title="Excluir evento?"
+          description={`"${dialog.event.title}" será removido permanentemente, junto com as inscrições e a escala.`}
           isLoading={isDeleting}
-          onCancel={() => setDialog({ mode: "closed" })}
+          error={deleteError}
+          onCancel={() => openDialog({ mode: "closed" })}
           onConfirm={confirmDelete}
         />
       )}

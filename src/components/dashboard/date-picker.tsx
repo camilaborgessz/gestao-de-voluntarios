@@ -97,14 +97,27 @@ export function DatePicker({
   const displayValue = day && month && year ? `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}` : "";
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div
+      className="relative"
+      ref={containerRef}
+      onKeyDown={(e) => {
+        // While the popover is open, Escape closes it here — don't let it bubble
+        // up and close a surrounding modal too.
+        if (e.key === "Escape" && open) {
+          e.stopPropagation();
+          e.nativeEvent.stopImmediatePropagation();
+          setOpen(false);
+          setView("days");
+        }
+      }}
+    >
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center justify-between rounded-[5px] border border-[#6e9193] px-3 py-2 text-left text-sm outline-none transition-colors duration-150 focus:border-brand"
       >
         <span className={displayValue ? "text-ink" : "text-ink/40"}>{displayValue || "Selecione a data"}</span>
-        <Calendar size={16} className="text-brand" />
+        <Calendar size={16} className="text-brand dark:text-lime-from" />
       </button>
 
       {open && (

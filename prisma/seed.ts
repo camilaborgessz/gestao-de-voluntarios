@@ -18,6 +18,27 @@ async function main() {
       role: "ADMIN",
     },
   });
+
+  // Development accounts, created only when SEED_TEST_PASSWORD is set (never commit a password here).
+  //   SEED_TEST_PASSWORD="..." npx prisma db seed
+  const testPassword = process.env.SEED_TEST_PASSWORD;
+  if (!testPassword) {
+    console.log("SEED_TEST_PASSWORD não definida: contas de teste não foram criadas.");
+    return;
+  }
+  const testHash = await bcrypt.hash(testPassword, 10);
+
+  await prisma.user.upsert({
+    where: { email: "admin.teste@voluntarios.com" },
+    update: {},
+    create: { name: "Admin Teste", email: "admin.teste@voluntarios.com", passwordHash: testHash, role: "ADMIN" },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "voluntario@voluntarios.com" },
+    update: {},
+    create: { name: "Voluntário Teste", email: "voluntario@voluntarios.com", passwordHash: testHash, role: "VOLUNTEER" },
+  });
 }
 
 main()

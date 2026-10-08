@@ -6,6 +6,9 @@ import { X } from "lucide-react";
 import { createEvent, updateEvent, type ActionState } from "@/app/dashboard/eventos/novo/actions";
 import type { EventRecord } from "./event-management";
 import { DatePicker } from "./date-picker";
+import { Modal } from "./modal";
+import { ConfirmDialog } from "./confirm-dialog";
+import { useConfirmSubmit } from "./use-confirm-submit";
 import { toDateInputValue, toTimeInputValue } from "@/lib/event-schedule";
 
 const inputClass =
@@ -15,18 +18,21 @@ export function EventFormDialog({
   event,
   uniforms,
   onClose,
+  defaultDate,
 }: {
   event: EventRecord | null;
   uniforms: string[];
   onClose: () => void;
+  defaultDate?: string;
 }) {
   const isEdit = event !== null;
   const action = isEdit ? updateEvent : createEvent;
   const [state, formAction, isPending] = useActionState<ActionState, FormData>(action, undefined);
+  const confirmSave = useConfirmSubmit(isEdit);
   const wasPending = useRef(false);
 
   const [title, setTitle] = useState(event?.title ?? "");
-  const [date, setDate] = useState(event ? toDateInputValue(event.startsAt) : "");
+  const [date, setDate] = useState(event ? toDateInputValue(event.startsAt) : defaultDate ?? "");
   const [time, setTime] = useState(event ? toTimeInputValue(event.startsAt) : "");
   const [capacity, setCapacity] = useState(String(event?.capacity ?? 1));
   const [dressCode, setDressCode] = useState<string[]>(event?.dressCode ?? []);
@@ -43,16 +49,24 @@ export function EventFormDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-[15px] bg-surface p-6 shadow-xl">
+    <>
+    <Modal
+      onClose={onClose}
+      labelledBy="event-form-title"
+      closeOnBackdrop={!isPending}
+      className="w-full max-w-md rounded-[15px] bg-surface p-6 shadow-xl"
+    >
+      <div>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-ink">{isEdit ? "Editar evento" : "Novo evento"}</h2>
+          <h2 id="event-form-title" className="text-xl font-semibold text-ink">
+            {isEdit ? "Editar evento" : "Novo evento"}
+          </h2>
           <button onClick={onClose} title="Fechar" className="text-ink/60 transition-colors hover:text-ink">
             <X size={20} />
           </button>
         </div>
 
-        <form action={formAction} className="flex flex-col gap-3">
+        <form {...confirmSave.formProps} action={formAction} className="flex flex-col gap-3">
           {isEdit && <input type="hidden" name="id" value={event.id} />}
           <input type="hidden" name="date" value={date} />
           {dressCode.map((tag) => (
@@ -66,6 +80,7 @@ export function EventFormDialog({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
+              data-autofocus
               className={inputClass}
               placeholder="Culto de Ensino"
             />
@@ -116,7 +131,7 @@ export function EventFormDialog({
                       onClick={() => toggleUniform(name)}
                       className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors duration-150 ${
                         selected
-                          ? "bg-gradient-to-r from-brand to-brand-dark text-white"
+                          ? "bg-gradient-to-r from-brand to-brand-dark dark:bg-none dark:bg-lime-from dark:text-brand text-white"
                           : "border border-[#6e9193] text-ink hover:bg-lime-from/30"
                       }`}
                     >
@@ -132,17 +147,30 @@ export function EventFormDialog({
             )}
           </div>
 
-          {state?.error && <p className="text-sm text-danger-to">{state.error}</p>}
+          {state?.error && <p className="text-sm text-danger-text">{state.error}</p>}
 
           <button
             type="submit"
             disabled={isPending}
-            className="mt-2 rounded-full bg-gradient-to-r from-brand to-brand-dark py-2.5 text-sm font-bold text-white transition duration-150 ease-out hover:scale-[1.02] hover:brightness-110 active:scale-95 disabled:opacity-60"
+            className="mt-2 rounded-full bg-gradient-to-r from-brand to-brand-dark dark:bg-none dark:bg-lime-from dark:text-brand py-2.5 text-sm font-bold text-white transition duration-150 ease-out hover:scale-[1.02] hover:brightness-110 active:scale-95 disabled:opacity-60"
           >
             {isPending ? "Salvando..." : isEdit ? "Salvar alterações" : "Criar evento"}
           </button>
         </form>
       </div>
-    </div>
+    </Modal>
+      {confirmSave.asking && (
+        <ConfirmDialog
+          title="Salvar alterações?"
+          description="As alterações do evento serão aplicadas imediatamente."
+          confirmLabel="Salvar"
+          cancelLabel="Cancelar"
+          tone="default"
+          loadingLabel="Salvando..."
+          onCancel={confirmSave.cancel}
+          onConfirm={confirmSave.confirm}
+        />
+      )}
+    </>
   );
 }

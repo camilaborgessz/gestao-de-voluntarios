@@ -25,13 +25,24 @@ type DialogState =
 
 export function NoticeManagement({ notices }: { notices: NoticeRecord[] }) {
   const [dialog, setDialog] = useState<DialogState>({ mode: "closed" });
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, startDeleteTransition] = useTransition();
+
+  function openDialog(next: DialogState) {
+    setDeleteError(null);
+    setDialog(next);
+  }
 
   function confirmDelete() {
     if (dialog.mode !== "delete") return;
     const { notice } = dialog;
+    setDeleteError(null);
     startDeleteTransition(async () => {
-      await deleteNotice(notice.id);
+      const result = await deleteNotice(notice.id);
+      if (result?.error) {
+        setDeleteError(result.error);
+        return;
+      }
       setDialog({ mode: "closed" });
     });
   }
@@ -53,7 +64,7 @@ export function NoticeManagement({ notices }: { notices: NoticeRecord[] }) {
         <h2 className="text-xl font-medium text-ink lg:text-2xl">Avisos</h2>
         <button
           title="Novo aviso"
-          onClick={() => setDialog({ mode: "create" })}
+          onClick={() => openDialog({ mode: "create" })}
           className="flex size-6 items-center justify-center rounded-full bg-gradient-to-b from-lime-from to-lime-to text-brand transition duration-150 ease-out hover:scale-110 hover:brightness-95 active:scale-95"
         >
           <Plus size={14} strokeWidth={2.5} />
@@ -65,26 +76,28 @@ export function NoticeManagement({ notices }: { notices: NoticeRecord[] }) {
         editable
         onEdit={(notice) => {
           const record = findRecord(notice.id);
-          if (record) setDialog({ mode: "edit", notice: record });
+          if (record) openDialog({ mode: "edit", notice: record });
         }}
         onDelete={(notice) => {
           const record = findRecord(notice.id);
-          if (record) setDialog({ mode: "delete", notice: record });
+          if (record) openDialog({ mode: "delete", notice: record });
         }}
       />
 
       {(dialog.mode === "create" || dialog.mode === "edit") && (
         <NoticeFormDialog
           notice={dialog.mode === "edit" ? dialog.notice : null}
-          onClose={() => setDialog({ mode: "closed" })}
+          onClose={() => openDialog({ mode: "closed" })}
         />
       )}
 
       {dialog.mode === "delete" && (
         <ConfirmDialog
-          message="Tem certeza que deseja excluir esse aviso?"
+          title="Excluir aviso?"
+          description="Este aviso será removido permanentemente."
           isLoading={isDeleting}
-          onCancel={() => setDialog({ mode: "closed" })}
+          error={deleteError}
+          onCancel={() => openDialog({ mode: "closed" })}
           onConfirm={confirmDelete}
         />
       )}

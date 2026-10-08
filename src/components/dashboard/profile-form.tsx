@@ -5,6 +5,8 @@ import { Check, Pencil } from "lucide-react";
 import { updateProfile, type ActionState } from "@/app/dashboard/perfil/actions";
 import { DatePicker } from "./date-picker";
 import { formatPhoneInput } from "@/lib/phone";
+import { ConfirmDialog } from "./confirm-dialog";
+import { useConfirmSubmit } from "./use-confirm-submit";
 
 const inputClass =
   "rounded-[5px] border border-[#6e9193] bg-surface px-3 py-2.5 text-sm text-ink outline-none transition-colors duration-150 focus:border-brand";
@@ -14,15 +16,26 @@ export type ProfileUser = {
   email: string;
   phone: string | null;
   birthDate: Date | null;
+  helpMode: "INDIVIDUAL" | "COUPLE";
+  spouseName: string | null;
 };
 
-export function ProfileForm({ user }: { user: ProfileUser }) {
+const helpModeOptions = [
+  { value: "INDIVIDUAL", label: "Individual", hint: "Sirvo sozinho(a)" },
+  { value: "COUPLE", label: "Casal", hint: "Sirvo com meu cônjuge (posso escolher servir sozinho(a) em cada evento)" },
+] as const;
+
+export function ProfileForm({ user, showHelpMode = false }: { user: ProfileUser; showHelpMode?: boolean }) {
   const [state, formAction, isPending] = useActionState<ActionState, FormData>(updateProfile, undefined);
+  const confirmSave = useConfirmSubmit(true);
 
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
   const [phone, setPhone] = useState(user.phone ?? "");
   const [birthDate, setBirthDate] = useState(user.birthDate ? user.birthDate.toISOString().slice(0, 10) : "");
+
+  const [helpMode, setHelpMode] = useState(user.helpMode);
+  const [spouseName, setSpouseName] = useState(user.spouseName ?? "");
 
   const justSaved = state?.success === true;
 
@@ -31,6 +44,7 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
       <h2 className="mb-4 text-xl font-medium text-ink lg:text-2xl">Perfil</h2>
 
       <form
+        {...confirmSave.formProps}
         action={formAction}
         className="flex flex-col gap-4 rounded-[15px] bg-surface p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
       >
@@ -79,17 +93,70 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
           </label>
         </div>
 
-        {state?.error && <p className="text-sm text-danger-to">{state.error}</p>}
+        {showHelpMode && (
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-1.5 text-base font-medium text-ink">Como você vai ajudar?</legend>
+            <div className="grid grid-cols-2 gap-3">
+              {helpModeOptions.map(({ value, label, hint }) => (
+                <label
+                  key={value}
+                  className={`flex cursor-pointer flex-col gap-0.5 rounded-[10px] border px-4 py-3 transition-colors duration-150 ${
+                    helpMode === value
+                      ? "border-brand bg-brand/10"
+                      : "border-[#6e9193] hover:border-brand"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="helpMode"
+                    value={value}
+                    checked={helpMode === value}
+                    onChange={() => setHelpMode(value)}
+                    className="sr-only"
+                  />
+                  <span className="text-sm font-semibold text-ink">{label}</span>
+                  <span className="text-xs text-ink/60">{hint}</span>
+                </label>
+              ))}
+            </div>
+            {helpMode === "COUPLE" && (
+              <label className="mt-2 flex flex-col gap-1.5">
+                <span className="text-base font-medium text-ink">Nome do cônjuge</span>
+                <input
+                  name="spouseName"
+                  value={spouseName}
+                  onChange={(e) => setSpouseName(e.target.value)}
+                  placeholder="Aparece na escala como CASAL: você e cônjuge"
+                  className={inputClass}
+                />
+              </label>
+            )}
+          </fieldset>
+        )}
+
+        {state?.error && <p className="text-sm text-danger-text">{state.error}</p>}
 
         <button
           type="submit"
           disabled={isPending}
-          className="mt-2 flex items-center gap-2 self-end rounded-full bg-gradient-to-r from-brand to-brand-dark px-6 py-2.5 text-sm font-bold text-white transition duration-150 ease-out hover:scale-105 hover:brightness-110 active:scale-95 disabled:opacity-60"
+          className="mt-2 flex items-center gap-2 self-end rounded-full bg-gradient-to-r from-brand to-brand-dark dark:bg-none dark:bg-lime-from dark:text-brand px-6 py-2.5 text-sm font-bold text-white transition duration-150 ease-out hover:scale-105 hover:brightness-110 active:scale-95 disabled:opacity-60"
         >
           {justSaved ? <Check size={16} /> : <Pencil size={16} />}
           {isPending ? "Salvando..." : justSaved ? "Perfil atualizado" : "Editar Perfil"}
         </button>
       </form>
+      {confirmSave.asking && (
+        <ConfirmDialog
+          title="Salvar alterações?"
+          description="Seus dados de perfil serão atualizados."
+          confirmLabel="Salvar"
+          cancelLabel="Cancelar"
+          tone="default"
+          loadingLabel="Salvando..."
+          onCancel={confirmSave.cancel}
+          onConfirm={confirmSave.confirm}
+        />
+      )}
     </section>
   );
 }

@@ -35,7 +35,7 @@ export function UserTable({
   return (
     <div className="overflow-hidden rounded-[10px] border border-brand bg-surface/[0.57] dark:border-white/10 dark:bg-surface">
       <div
-        className={`grid ${columns} gap-2 bg-gradient-to-r from-brand to-brand-dark px-6 py-3 text-sm font-bold text-white`}
+        className={`grid ${columns} gap-2 bg-gradient-to-r from-brand to-brand-dark dark:bg-none dark:bg-surface-raised dark:text-lime-from px-6 py-3 text-sm font-bold text-white`}
       >
         <span>Nome</span>
         <span>Nascimento</span>

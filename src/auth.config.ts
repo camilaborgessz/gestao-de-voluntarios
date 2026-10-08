@@ -1,6 +1,9 @@
 import type { NextAuthConfig } from "next-auth";
 
 export const authConfig = {
+  // Without this, `next start` (production) rejects every request with
+  // "There was a problem with the server configuration" unless AUTH_URL is set.
+  trustHost: true,
   pages: {
     signIn: "/login",
   },
@@ -8,9 +11,10 @@ export const authConfig = {
     strategy: "jwt",
   },
   callbacks: {
-    authorized() {
-      // Login gate disabled for now (no DB configured yet). To re-enable,
-      // require isLoggedIn for requests where pathname starts with "/dashboard".
+    authorized({ auth, request }) {
+      if (request.nextUrl.pathname.startsWith("/dashboard")) {
+        return !!auth?.user;
+      }
       return true;
     },
     jwt({ token, user }) {

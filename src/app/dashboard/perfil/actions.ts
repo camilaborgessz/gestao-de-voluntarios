@@ -11,6 +11,8 @@ const profileSchema = z.object({
   email: z.string().email("Email inválido"),
   phone: z.string().optional(),
   birthDate: z.string().optional(),
+  helpMode: z.enum(["INDIVIDUAL", "COUPLE"]).optional(),
+  spouseName: z.string().trim().max(120).optional(),
 });
 
 const passwordSchema = z
@@ -37,7 +39,7 @@ export async function updateProfile(_prevState: ActionState, formData: FormData)
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
   }
 
-  const { name, email, phone, birthDate } = parsed.data;
+  const { name, email, phone, birthDate, helpMode, spouseName } = parsed.data;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing && existing.id !== session.user.id) {
@@ -51,6 +53,7 @@ export async function updateProfile(_prevState: ActionState, formData: FormData)
       email,
       phone: phone || null,
       birthDate: birthDate ? new Date(birthDate) : null,
+      ...(helpMode ? { helpMode, spouseName: helpMode === "COUPLE" ? spouseName || null : null } : {}),
     },
   });
 

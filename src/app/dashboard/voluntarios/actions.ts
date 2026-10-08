@@ -5,9 +5,9 @@ import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { adminActionError } from "@/lib/auth-guards";
 
-// TODO(auth): once login is wired up, guard every action below with
-// something like `requireRole("ADMIN")` before touching the database.
+// Every action below is admin-only.
 
 const userSchema = z.object({
   name: z.string().min(1, "Informe o nome"),
@@ -29,6 +29,9 @@ function generateTempPassword() {
 }
 
 export async function createUser(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+  const denied = await adminActionError();
+  if (denied) return { error: denied };
+
   const parsed = userSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
@@ -60,6 +63,9 @@ export async function createUser(_prevState: ActionState, formData: FormData): P
 }
 
 export async function updateUser(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+  const denied = await adminActionError();
+  if (denied) return { error: denied };
+
   const parsed = updateSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
@@ -82,6 +88,8 @@ export async function updateUser(_prevState: ActionState, formData: FormData): P
 }
 
 export async function resetUserPassword(id: string): Promise<string> {
+  if (await adminActionError()) throw new Error("Sem permissão");
+
   const password = generateTempPassword();
   const passwordHash = await bcrypt.hash(password, 10);
 
@@ -92,6 +100,8 @@ export async function resetUserPassword(id: string): Promise<string> {
 }
 
 export async function deleteUser(id: string) {
+  if (await adminActionError()) throw new Error("Sem permissão");
+
   await prisma.user.delete({ where: { id } });
   revalidatePath("/dashboard/voluntarios");
 }

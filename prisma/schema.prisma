@@ -15,6 +15,23 @@ enum Role {
   VOLUNTEER
 }
 
+enum HelpMode {
+  INDIVIDUAL
+  COUPLE
+}
+
+enum NotificationKind {
+  REMINDER_24H
+  REMINDER_12H
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
 enum EnrollmentStatus {
   PENDING
   CONFIRMED
@@ -31,10 +48,13 @@ model User {
   role         Role       @default(VOLUNTEER)
   phone        String?
   birthDate    DateTime?
+  helpMode     HelpMode   @default(INDIVIDUAL)
+  spouseName   String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
   enrollments  Enrollment[]
+  notifications Notification[]
 
   @@index([role])
 }
@@ -62,6 +82,8 @@ model Event {
   startsAt  DateTime
   capacity  Int      @default(1)
   dressCode String[]
+  note      String?
+  scheduleTitle String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -91,8 +113,13 @@ model Enrollment {
   eventId    String
   event      Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
   slotId     String?
+  position   Int              @default(0)
+  remind24At DateTime?
+  remind12At DateTime?
   slot       EventSlot?       @relation(fields: [slotId], references: [id], onDelete: SetNull)
   status     EnrollmentStatus @default(PENDING)
+  helpMode   HelpMode         @default(INDIVIDUAL)
+  spouseName String?
   checkInAt  DateTime?
   checkOutAt DateTime?
   createdAt  DateTime         @default(now())
@@ -100,4 +127,24 @@ model Enrollment {
 
   @@unique([userId, eventId])
   @@index([status])
+}
+
+/// In-app notification (bell icon). Also tracks the WhatsApp delivery of the same message.
+/// Notifications disappear 7 days after they were created.
+model Notification {
+  id               String         @id @default(cuid())
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId          String?
+  kind             NotificationKind
+  title            String
+  message          String
+  createdAt        DateTime       @default(now())
+  readAt           DateTime?
+  whatsappStatus   DeliveryStatus @default(PENDING)
+  whatsappError    String?
+  whatsappAttempts Int            @default(0)
+
+  @@index([userId, createdAt])
+  @@index([whatsappStatus, createdAt])
 }

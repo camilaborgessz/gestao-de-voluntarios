@@ -126,14 +126,25 @@ export function DateRangePicker({
     from && to ? `${format(from)} – ${format(to)}` : from ? `${format(from)} – ...` : "";
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div
+      className="relative"
+      ref={containerRef}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && open) {
+          e.stopPropagation();
+          e.nativeEvent.stopImmediatePropagation();
+          setOpen(false);
+          setView("days");
+        }
+      }}
+    >
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center justify-between rounded-[5px] border border-[#6e9193] px-3 py-2 text-left text-sm outline-none transition-colors duration-150 focus:border-brand"
       >
         <span className={displayValue ? "text-ink" : "text-ink/40"}>{displayValue || "Selecione o período"}</span>
-        <Calendar size={16} className="text-brand" />
+        <Calendar size={16} className="text-brand dark:text-lime-from" />
       </button>
 
       {open && (

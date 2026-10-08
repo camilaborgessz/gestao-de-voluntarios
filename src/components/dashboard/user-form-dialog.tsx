@@ -5,6 +5,8 @@ import { X, Copy, Check } from "lucide-react";
 import { createUser, updateUser, resetUserPassword, type ActionState } from "@/app/dashboard/voluntarios/actions";
 import type { UserRecord } from "./user-table";
 import { DatePicker } from "./date-picker";
+import { ConfirmDialog } from "./confirm-dialog";
+import { useConfirmSubmit } from "./use-confirm-submit";
 import { formatPhoneInput } from "@/lib/phone";
 
 const inputClass =
@@ -14,6 +16,7 @@ export function UserFormDialog({ user, onClose }: { user: UserRecord | null; onC
   const isEdit = user !== null;
   const action = isEdit ? updateUser : createUser;
   const [state, formAction, isPending] = useActionState<ActionState, FormData>(action, undefined);
+  const confirmSave = useConfirmSubmit(isEdit);
   const wasPending = useRef(false);
 
   // Controlled fields: a Server Action submission resets uncontrolled inputs
@@ -80,7 +83,7 @@ export function UserFormDialog({ user, onClose }: { user: UserRecord | null; onC
 
           <button
             onClick={onClose}
-            className="mt-6 w-full rounded-full bg-gradient-to-r from-brand to-brand-dark py-2.5 text-sm font-bold text-white transition duration-150 ease-out hover:scale-[1.02] active:scale-95"
+            className="mt-6 w-full rounded-full bg-gradient-to-r from-brand to-brand-dark dark:bg-none dark:bg-lime-from dark:text-brand py-2.5 text-sm font-bold text-white transition duration-150 ease-out hover:scale-[1.02] active:scale-95"
           >
             Concluir
           </button>
@@ -90,6 +93,7 @@ export function UserFormDialog({ user, onClose }: { user: UserRecord | null; onC
   }
 
   return (
+    <>
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="w-full max-w-md rounded-[15px] bg-surface p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
@@ -99,7 +103,7 @@ export function UserFormDialog({ user, onClose }: { user: UserRecord | null; onC
           </button>
         </div>
 
-        <form action={formAction} className="flex flex-col gap-3">
+        <form {...confirmSave.formProps} action={formAction} className="flex flex-col gap-3">
           {isEdit && <input type="hidden" name="id" value={user.id} />}
           <input type="hidden" name="birthDate" value={birthDate} />
           <input type="hidden" name="role" value={role} />
@@ -170,17 +174,30 @@ export function UserFormDialog({ user, onClose }: { user: UserRecord | null; onC
             </button>
           )}
 
-          {state?.error && <p className="text-sm text-danger-to">{state.error}</p>}
+          {state?.error && <p className="text-sm text-danger-text">{state.error}</p>}
 
           <button
             type="submit"
             disabled={isPending}
-            className="mt-2 rounded-full bg-gradient-to-r from-brand to-brand-dark py-2.5 text-sm font-bold text-white transition duration-150 ease-out hover:scale-[1.02] hover:brightness-110 active:scale-95 disabled:opacity-60"
+            className="mt-2 rounded-full bg-gradient-to-r from-brand to-brand-dark dark:bg-none dark:bg-lime-from dark:text-brand py-2.5 text-sm font-bold text-white transition duration-150 ease-out hover:scale-[1.02] hover:brightness-110 active:scale-95 disabled:opacity-60"
           >
             {isPending ? "Salvando..." : isEdit ? "Salvar alterações" : "Criar usuário"}
           </button>
         </form>
       </div>
     </div>
+      {confirmSave.asking && (
+        <ConfirmDialog
+          title="Salvar alterações?"
+          description="As alterações do usuário serão aplicadas imediatamente."
+          confirmLabel="Salvar"
+          cancelLabel="Cancelar"
+          tone="default"
+          loadingLabel="Salvando..."
+          onCancel={confirmSave.cancel}
+          onConfirm={confirmSave.confirm}
+        />
+      )}
+    </>
   );
 }

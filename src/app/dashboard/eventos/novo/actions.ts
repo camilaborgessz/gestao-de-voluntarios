@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { adminActionError } from "@/lib/auth-guards";
+import { wallClockToDate } from "@/lib/event-schedule";
 
-// TODO(auth): once login is wired up, guard every action below with
-// something like `requireRole("ADMIN")` before touching the database.
+// Every action below is admin-only (volunteers can only view events and join them).
 
 const eventSchema = z.object({
   title: z.string().min(1, "Informe o título"),
@@ -22,13 +23,16 @@ const updateEventSchema = eventSchema.extend({
 export type ActionState = { error?: string } | undefined;
 
 export async function createEvent(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+  const denied = await adminActionError();
+  if (denied) return { error: denied };
+
   const parsed = eventSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
   }
 
   const { title, date, time, capacity } = parsed.data;
-  const startsAt = new Date(`${date}T${time}`);
+  const startsAt = wallClockToDate(date, time);
   if (Number.isNaN(startsAt.getTime())) {
     return { error: "Data ou horário inválido" };
   }
@@ -38,22 +42,30 @@ export async function createEvent(_prevState: ActionState, formData: FormData): 
     .map((value) => String(value).trim())
     .filter(Boolean);
 
-  await prisma.event.create({
-    data: { title, startsAt, capacity, dressCode },
-  });
+  try {
+    await prisma.event.create({
+      data: { title, startsAt, capacity, dressCode },
+    });
+  } catch {
+    return { error: "Não foi possível salvar o evento. Tente novamente." };
+  }
 
   revalidatePath("/dashboard/eventos/novo");
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/agenda");
 }
 
 export async function updateEvent(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+  const denied = await adminActionError();
+  if (denied) return { error: denied };
+
   const parsed = updateEventSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
   }
 
   const { id, title, date, time, capacity } = parsed.data;
-  const startsAt = new Date(`${date}T${time}`);
+  const startsAt = wallClockToDate(date, time);
   if (Number.isNaN(startsAt.getTime())) {
     return { error: "Data ou horário inválido" };
   }
@@ -63,19 +75,32 @@ export async function updateEvent(_prevState: ActionState, formData: FormData): 
     .map((value) => String(value).trim())
     .filter(Boolean);
 
-  await prisma.event.update({
-    where: { id },
-    data: { title, startsAt, capacity, dressCode },
-  });
+  try {
+    await prisma.event.update({
+      where: { id },
+      data: { title, startsAt, capacity, dressCode },
+    });
+  } catch {
+    return { error: "Não foi possível salvar as alterações. Tente novamente." };
+  }
 
   revalidatePath("/dashboard/eventos/novo");
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/agenda");
 }
 
-export async function deleteEvent(id: string) {
-  await prisma.event.delete({ where: { id } });
+export async function deleteEvent(id: string): Promise<{ error?: string } | undefined> {
+  const denied = await adminActionError();
+  if (denied) return { error: denied };
+
+  try {
+    await prisma.event.delete({ where: { id } });
+  } catch {
+    return { error: "Não foi possível excluir o evento. Tente novamente." };
+  }
   revalidatePath("/dashboard/eventos/novo");
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/agenda");
 }
 
 const uniformSchema = z.object({
@@ -87,6 +112,9 @@ const updateUniformSchema = uniformSchema.extend({
 });
 
 export async function createUniform(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+  const denied = await adminActionError();
+  if (denied) return { error: denied };
+
   const parsed = uniformSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
@@ -102,6 +130,9 @@ export async function createUniform(_prevState: ActionState, formData: FormData)
 }
 
 export async function updateUniform(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+  const denied = await adminActionError();
+  if (denied) return { error: denied };
+
   const parsed = updateUniformSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
@@ -118,8 +149,15 @@ export async function updateUniform(_prevState: ActionState, formData: FormData)
   revalidatePath("/dashboard/eventos/novo");
 }
 
-export async function deleteUniform(id: string) {
-  await prisma.uniform.delete({ where: { id } });
+export async function deleteUniform(id: string): Promise<{ error?: string } | undefined> {
+  const denied = await adminActionError();
+  if (denied) return { error: denied };
+
+  try {
+    await prisma.uniform.delete({ where: { id } });
+  } catch {
+    return { error: "Não foi possível excluir o uniforme. Tente novamente." };
+  }
   revalidatePath("/dashboard/eventos/novo");
 }
 
@@ -147,6 +185,9 @@ const updateNoticeSchema = z
   });
 
 export async function createNotice(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+  const denied = await adminActionError();
+  if (denied) return { error: denied };
+
   const parsed = noticeSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
@@ -160,8 +201,8 @@ export async function createNotice(_prevState: ActionState, formData: FormData):
     data: {
       message,
       author,
-      visibleFrom: new Date(`${visibleFrom}T00:00:00`),
-      visibleUntil: new Date(`${visibleUntil}T23:59:59`),
+      visibleFrom: wallClockToDate(visibleFrom, "00:00"),
+      visibleUntil: wallClockToDate(visibleUntil, "23:59"),
     },
   });
   revalidatePath("/dashboard/eventos/novo");
@@ -169,6 +210,9 @@ export async function createNotice(_prevState: ActionState, formData: FormData):
 }
 
 export async function updateNotice(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+  const denied = await adminActionError();
+  if (denied) return { error: denied };
+
   const parsed = updateNoticeSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
@@ -179,16 +223,23 @@ export async function updateNotice(_prevState: ActionState, formData: FormData):
     where: { id },
     data: {
       message,
-      visibleFrom: new Date(`${visibleFrom}T00:00:00`),
-      visibleUntil: new Date(`${visibleUntil}T23:59:59`),
+      visibleFrom: wallClockToDate(visibleFrom, "00:00"),
+      visibleUntil: wallClockToDate(visibleUntil, "23:59"),
     },
   });
   revalidatePath("/dashboard/eventos/novo");
   revalidatePath("/dashboard");
 }
 
-export async function deleteNotice(id: string) {
-  await prisma.notice.delete({ where: { id } });
+export async function deleteNotice(id: string): Promise<{ error?: string } | undefined> {
+  const denied = await adminActionError();
+  if (denied) return { error: denied };
+
+  try {
+    await prisma.notice.delete({ where: { id } });
+  } catch {
+    return { error: "Não foi possível excluir o aviso. Tente novamente." };
+  }
   revalidatePath("/dashboard/eventos/novo");
   revalidatePath("/dashboard");
 }

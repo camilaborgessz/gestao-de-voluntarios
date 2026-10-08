@@ -8,6 +8,9 @@
   --surface: #ffffff;
   --surface-raised: #ffffff;
   --track: #ededed;
+  --danger-text: #bf0606;
+  --success-text: #2e9461;
+  --warning-text: #e6b01b;
 }
 
 [data-theme="dark"] {
@@ -16,6 +19,9 @@
   --surface: #20413b;
   --surface-raised: #2b554d;
   --track: #2a4d46;
+  --danger-text: #ff8a8a;
+  --success-text: #6fd6a0;
+  --warning-text: #f5cd5d;
 }
 
 @theme inline {
@@ -26,6 +32,9 @@
   --color-brand: #02575c;
   --color-brand-dark: #16302c;
   --color-track: var(--track);
+  --color-danger-text: var(--danger-text);
+  --color-success-text: var(--success-text);
+  --color-warning-text: var(--warning-text);
 
   --color-success-from: #58bb89;
   --color-success-to: #2e9461;

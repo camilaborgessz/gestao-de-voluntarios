@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Poppins, Nunito } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -31,14 +32,12 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${poppins.variable} ${nunito.variable} h-full antialiased`}
     >
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`,
-          }}
-        />
-      </head>
-      <body className="min-h-full flex flex-col bg-bg font-sans text-ink">{children}</body>
+      <body className="min-h-full flex flex-col bg-bg font-sans text-ink">
+        <Script id="theme-init" strategy="beforeInteractive">
+          {`(function(){try{var t=localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`}
+        </Script>
+        {children}
+      </body>
     </html>
   );
 }
