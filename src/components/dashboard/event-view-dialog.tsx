@@ -6,6 +6,7 @@ import type { Route } from "next";
 import { X, Pencil, Trash2, ClipboardList, Download, Loader2 } from "lucide-react";
 import type { EventRecord } from "./event-management";
 import { Modal } from "./modal";
+import { LinkIcon } from "./link-pending";
 import { formatEventSchedule } from "@/lib/event-schedule";
 import { DEFAULT_SCHEDULE_TITLE } from "@/lib/schedule-defaults";
 import { describeEventDate, renderScheduleImage } from "@/lib/schedule-image";
@@ -48,7 +49,7 @@ function ScheduleSection({ event }: { event: EventRecord }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (schedule.length === 0) return <p className="text-ink/60">A escala ainda não foi montada.</p>;
+  if (schedule.length === 0) return <p className="text-ink/60">Escala ainda não montada</p>;
 
   if (image && !image.failed) {
     return (
@@ -206,7 +207,7 @@ export function EventViewDialog({
             href={scheduleHref as Route}
             className="mt-6 flex items-center justify-center gap-2 rounded-full border border-brand py-2.5 text-sm font-bold text-brand transition duration-150 ease-out hover:scale-[1.02] hover:bg-brand/10 active:scale-95 dark:text-lime-from"
           >
-            <ClipboardList size={16} />
+            <LinkIcon icon={ClipboardList} size={16} />
             Gerenciar escala
           </Link>
         )}

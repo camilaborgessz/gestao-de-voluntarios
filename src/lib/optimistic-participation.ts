@@ -1,4 +1,5 @@
 import type { EventRecord } from "@/components/dashboard/event-management";
+import { seatsFor } from "@/lib/seats";
 
 export interface ParticipationUpdate {
   id: string;
@@ -18,7 +19,7 @@ export function applyParticipation(events: EventRecord[], update: ParticipationU
       ...event,
       joined: update.joined,
       joinedMode: update.joined ? update.mode : undefined,
-      filled: Math.max(0, (event.filled ?? 0) + (update.joined ? 1 : -1)),
+      filled: Math.max(0, (event.filled ?? 0) + (update.joined ? seatsFor(update.mode) : -seatsFor(event.joinedMode))),
     };
   });
 }

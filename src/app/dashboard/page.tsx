@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { seatsTaken } from "@/lib/seats";
 import { UpcomingEventsList } from "@/components/dashboard/upcoming-events-list";
 import type { EventRecord } from "@/components/dashboard/event-management";
 import { VerseCard } from "@/components/dashboard/verse-card";
@@ -35,9 +36,8 @@ export default async function DashboardPage() {
       orderBy: { startsAt: "asc" },
       take: isVolunteer ? 50 : 8,
       include: {
-        _count: { select: { enrollments: { where: { status: "CONFIRMED" } } } },
         slots: scheduleSlotsArgs,
-        enrollments: { where: { userId: userId ?? "", status: "CONFIRMED" }, select: { id: true, helpMode: true } },
+        enrollments: { where: { status: "CONFIRMED" }, select: { userId: true, helpMode: true } },
       },
     }),
     prisma.event.count({ where: { startsAt: { gte: startOfToday } } }),
@@ -57,9 +57,9 @@ export default async function DashboardPage() {
     note: event.note,
     scheduleTitle: event.scheduleTitle,
     schedule: isVolunteer ? toScheduleView(event.slots) : undefined,
-    filled: event._count.enrollments,
-    joined: event.enrollments.length > 0,
-    joinedMode: event.enrollments[0]?.helpMode,
+    filled: seatsTaken(event.enrollments),
+    joined: event.enrollments.some((e) => e.userId === userId),
+    joinedMode: event.enrollments.find((e) => e.userId === userId)?.helpMode,
   }));
 
   const notices: Notice[] = rawNotices.map((notice) => ({
@@ -94,7 +94,7 @@ export default async function DashboardPage() {
 
           <div className="flex flex-col gap-4 rounded-[10px] bg-surface p-5 shadow-[0_4px_37px_rgba(0,0,0,0.1)]">
             {upcomingEvents.length === 0 ? (
-              <p className="text-sm text-ink/60">Nenhum evento programado por enquanto.</p>
+              <p className="text-sm text-ink/60">Nenhum evento programado</p>
             ) : (
               <UpcomingEventsList
                 events={upcomingEvents}

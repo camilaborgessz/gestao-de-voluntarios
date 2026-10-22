@@ -142,7 +142,7 @@ export function EventFormDialog({
               </div>
             ) : (
               <p className="text-xs font-normal text-ink/60">
-                Nenhum uniforme cadastrado ainda. Cadastre um em &ldquo;Uniformes&rdquo; primeiro.
+                Nenhum uniforme cadastrado
               </p>
             )}
           </div>

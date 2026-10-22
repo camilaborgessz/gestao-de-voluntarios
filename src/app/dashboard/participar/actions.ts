@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { initialReminderMarks } from "@/lib/reminders";
+import { seatsFor, seatsTaken } from "@/lib/seats";
 
 export type ParticipationResult = { error?: string } | undefined;
 
@@ -13,7 +14,7 @@ function revalidateEventPages() {
   revalidatePath("/dashboard/eventos/novo");
 }
 
-/** Volunteer takes one spot (vaga) in the event, alone or together with their spouse. */
+/** Volunteer takes a spot (vaga) in the event: one when alone, two together with their spouse. */
 export async function joinEvent(
   eventId: string,
   helpMode: "INDIVIDUAL" | "COUPLE" = "INDIVIDUAL",
@@ -33,7 +34,7 @@ export async function joinEvent(
         select: {
           capacity: true,
           startsAt: true,
-          _count: { select: { enrollments: { where: { status: "CONFIRMED" } } } },
+          enrollments: { where: { status: "CONFIRMED" }, select: { helpMode: true } },
         },
       });
       if (!event) return "Evento não encontrado";
@@ -42,7 +43,9 @@ export async function joinEvent(
         where: { userId_eventId: { userId, eventId } },
       });
       if (existing?.status === "CONFIRMED") return "Você já está participando deste evento";
-      if (event._count.enrollments >= event.capacity) return "Não há mais vagas neste evento";
+      const spotsLeft = event.capacity - seatsTaken(event.enrollments);
+      if (spotsLeft <= 0) return "Não há mais vagas neste evento";
+      if (spotsLeft < seatsFor(helpMode)) return "Resta apenas 1 vaga. Participe sozinho(a).";
       const reminderMarks = initialReminderMarks(event.startsAt);
 
       if (existing) {

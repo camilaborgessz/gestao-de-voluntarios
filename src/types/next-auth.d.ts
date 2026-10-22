@@ -10,11 +10,13 @@ declare module "next-auth" {
 
   interface User {
     role: string;
+    passwordStamp?: number;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
     role?: string;
+    passwordStamp?: number;
   }
 }

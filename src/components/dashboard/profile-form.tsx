@@ -18,11 +18,12 @@ export type ProfileUser = {
   birthDate: Date | null;
   helpMode: "INDIVIDUAL" | "COUPLE";
   spouseName: string | null;
+  notifyEmail: boolean;
 };
 
 const helpModeOptions = [
   { value: "INDIVIDUAL", label: "Individual", hint: "Sirvo sozinho(a)" },
-  { value: "COUPLE", label: "Casal", hint: "Sirvo com meu cônjuge (posso escolher servir sozinho(a) em cada evento)" },
+  { value: "COUPLE", label: "Casal", hint: "Sirvo com meu cônjuge" },
 ] as const;
 
 export function ProfileForm({ user, showHelpMode = false }: { user: ProfileUser; showHelpMode?: boolean }) {
@@ -85,7 +86,7 @@ export function ProfileForm({ user, showHelpMode = false }: { user: ProfileUser;
               name="phoneDisplay"
               value={phone}
               onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
-              placeholder="(69) 99239-8509"
+              placeholder="(69) 99999-9999"
               inputMode="tel"
               className={inputClass}
             />
@@ -126,13 +127,23 @@ export function ProfileForm({ user, showHelpMode = false }: { user: ProfileUser;
                   name="spouseName"
                   value={spouseName}
                   onChange={(e) => setSpouseName(e.target.value)}
-                  placeholder="Aparece na escala como CASAL: você e cônjuge"
+                  placeholder="Nome do cônjuge"
                   className={inputClass}
                 />
               </label>
             )}
           </fieldset>
         )}
+
+        <label className="flex cursor-pointer items-center gap-3 text-sm text-ink">
+          <input
+            type="checkbox"
+            name="notifyEmail"
+            defaultChecked={user.notifyEmail}
+            className="size-4 cursor-pointer accent-brand dark:accent-lime-from"
+          />
+          Receber lembretes por e-mail
+        </label>
 
         {state?.error && <p className="text-sm text-danger-text">{state.error}</p>}
 

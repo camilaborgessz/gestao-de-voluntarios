@@ -129,7 +129,7 @@ export function NotificationBell() {
             {items.length === 0 ? (
               <div className="flex flex-col items-center gap-2 px-4 py-8 text-center text-sm text-ink/60">
                 <BellOff size={24} />
-                Nenhuma notificação por enquanto.
+                Nenhuma notificação
               </div>
             ) : (
               <ul>

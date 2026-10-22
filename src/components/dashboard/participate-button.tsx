@@ -20,6 +20,7 @@ export function ParticipateButton({
   full,
   coupleOption = false,
   defaultSpouseName = "",
+  spotsLeft,
   onOptimistic,
   className = "",
 }: {
@@ -31,6 +32,8 @@ export function ParticipateButton({
   coupleOption?: boolean;
   /** Spouse name saved on the volunteer's profile, used to pre-fill the field. */
   defaultSpouseName?: string;
+  /** Free spots in the event: a couple needs two. */
+  spotsLeft?: number;
   /** Called the moment the user acts, so the screen can update before the server answers. */
   onOptimistic?: (joined: boolean, mode: Mode) => void;
   className?: string;
@@ -152,7 +155,8 @@ export function ParticipateButton({
         </div>
         <button
           type="button"
-          disabled={isPending}
+          disabled={isPending || (spotsLeft !== undefined && spotsLeft < 2)}
+          title={spotsLeft !== undefined && spotsLeft < 2 ? "Resta apenas 1 vaga" : undefined}
           onClick={() => setAskSpouse(true)}
           className={`${pill} w-full bg-gradient-to-r from-brand to-brand-dark dark:bg-none dark:bg-lime-from dark:text-brand text-white ${
             askSpouse ? "ring-2 ring-lime-to ring-offset-2 ring-offset-surface" : ""

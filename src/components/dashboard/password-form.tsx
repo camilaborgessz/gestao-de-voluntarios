@@ -40,7 +40,7 @@ export function PasswordForm() {
             name="newPassword"
             placeholder="***********"
             required
-            minLength={6}
+            minLength={8}
             className={inputClass}
           />
         </label>
@@ -51,7 +51,7 @@ export function PasswordForm() {
             name="confirmPassword"
             placeholder="***********"
             required
-            minLength={6}
+            minLength={8}
             className={inputClass}
           />
         </label>

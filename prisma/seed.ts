@@ -6,18 +6,22 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const passwordHash = await bcrypt.hash("admin123", 10);
-
-  await prisma.user.upsert({
-    where: { email: "admin@voluntarios.com" },
-    update: {},
-    create: {
-      name: "Administrador",
-      email: "admin@voluntarios.com",
-      passwordHash,
-      role: "ADMIN",
-    },
-  });
+  // First leader account, created only when SEED_ADMIN_PASSWORD is set (never commit a password here).
+  //   SEED_ADMIN_PASSWORD="..." npx prisma db seed
+  // Everyone else is invited from "Gerenciar usuários" and chooses their own password.
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+  if (adminPassword) {
+    await prisma.user.upsert({
+      where: { email: "admin@voluntarios.com" },
+      update: {},
+      create: {
+        name: "Administrador",
+        email: "admin@voluntarios.com",
+        passwordHash: await bcrypt.hash(adminPassword, 10),
+        role: "ADMIN",
+      },
+    });
+  }
 
   // Development accounts, created only when SEED_TEST_PASSWORD is set (never commit a password here).
   //   SEED_TEST_PASSWORD="..." npx prisma db seed

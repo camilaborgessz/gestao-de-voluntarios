@@ -55,7 +55,7 @@ export function UniformManagement({ uniforms }: { uniforms: UniformRecord[] }) {
       </div>
 
       <div className="grid grid-cols-1 gap-3 rounded-[10px] bg-gradient-to-r from-brand to-brand-dark p-5 shadow-[0_4px_17px_rgba(0,0,0,0.25)] sm:grid-cols-2 dark:bg-none dark:bg-surface">
-        {uniforms.length === 0 && <p className="col-span-full text-sm text-white/80">Nenhum uniforme cadastrado ainda.</p>}
+        {uniforms.length === 0 && <p className="col-span-full text-sm text-white/80">Nenhum uniforme cadastrado</p>}
 
         {uniforms.map((uniform) => (
           <div

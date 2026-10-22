@@ -77,7 +77,7 @@ export function EventManagement({ events, uniforms }: { events: EventRecord[]; u
       </div>
 
       <div className="flex flex-col gap-4 rounded-[10px] bg-surface p-5 shadow-[0_4px_37px_rgba(0,0,0,0.1)]">
-        {events.length === 0 && <p className="text-sm text-ink/60">Nenhum evento programado. Eventos que já passaram ficam em Arquivados.</p>}
+        {events.length === 0 && <p className="text-sm text-ink/60">Nenhum evento programado</p>}
 
         {events.map((event) => (
           <EventManageRow
@@ -88,12 +88,6 @@ export function EventManagement({ events, uniforms }: { events: EventRecord[]; u
             onView={() => openDialog({ mode: "view", event })}
           />
         ))}
-
-        {events.length > 0 && (
-          <button className="self-end text-xs font-medium text-ink transition-colors duration-150 hover:text-brand hover:underline">
-            Ver mais
-          </button>
-        )}
       </div>
 
       {(dialog.mode === "create" || dialog.mode === "edit") && (

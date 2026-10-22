@@ -196,6 +196,8 @@ export function CalendarBoard({
           )}
         </div>
 
+        <div className="overflow-x-auto">
+          <div className="min-w-[640px]">
         <div className="mb-2 grid grid-cols-7">
           {WEEKDAYS_SHORT.map((label, index) => (
             <div
@@ -313,6 +315,9 @@ export function CalendarBoard({
           )}
         </div>
 
+          </div>
+        </div>
+
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-ink/55">
           {statusLegend.map(({ status, label }) => (
             <span key={status} className="flex items-center gap-1.5">
@@ -321,7 +326,7 @@ export function CalendarBoard({
             </span>
           ))}
           {events.length === 0 && (
-            <span className="text-ink/45">Nenhum evento em {MONTH_NAMES[month]}.</span>
+            <span className="text-ink/45">Nenhum evento em {MONTH_NAMES[month]}</span>
           )}
         </div>
       </div>
@@ -350,6 +355,7 @@ export function CalendarBoard({
                 joined={viewing.joined ?? false}
                 joinedMode={viewing.joinedMode}
                 full={(viewing.filled ?? 0) >= viewing.capacity}
+                spotsLeft={viewing.capacity - (viewing.filled ?? 0)}
                 coupleOption={coupleOption}
                 defaultSpouseName={defaultSpouseName}
               />

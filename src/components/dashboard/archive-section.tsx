@@ -1,7 +1,5 @@
-import { Info } from "lucide-react";
 import { formatShortDate } from "@/lib/event-schedule";
 import { ArchivedEventList, type ArchivedEvent } from "./archived-event-list";
-import { ARCHIVE_DAYS } from "@/lib/archive";
 
 export interface ArchivedNotice {
   id: string;
@@ -40,7 +38,7 @@ function SectionCard({ title, count, children }: { title: string; count: number;
 }
 
 const rowClass =
-  "flex items-center gap-4 rounded-[10px] border border-brand/[0.17] bg-surface px-4 py-3 dark:border-white/10 dark:bg-surface-raised";
+  "flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[10px] border border-brand/[0.17] bg-surface px-4 py-3 dark:border-white/10 dark:bg-surface-raised";
 
 /** Read-only archive of past events and notices, shown in the "Arquivados" tab of the admin management page. */
 export type { ArchivedEvent };
@@ -48,27 +46,21 @@ export type { ArchivedEvent };
 export function ArchiveSection({ events, notices }: { events: ArchivedEvent[]; notices: ArchivedNotice[] }) {
   return (
     <div className="flex flex-col gap-8">
-      <p className="flex items-start gap-2 rounded-[10px] bg-lime-from/40 px-4 py-3 text-sm text-ink dark:bg-white/10">
-        <Info size={18} className="mt-0.5 shrink-0 text-brand dark:text-lime-from" />
-        Eventos e avisos que já passaram ficam guardados aqui por {ARCHIVE_DAYS} dias e depois são apagados
-        automaticamente.
-      </p>
-
       <SectionCard title="Eventos" count={events.length}>
-        {events.length === 0 && <p className="text-sm text-ink/60">Nenhum evento arquivado.</p>}
+        {events.length === 0 && <p className="text-sm text-ink/60">Nenhum evento arquivado</p>}
         <ArchivedEventList events={events} />
       </SectionCard>
 
       <SectionCard title="Avisos" count={notices.length}>
-        {notices.length === 0 && <p className="text-sm text-ink/60">Nenhum aviso arquivado.</p>}
+        {notices.length === 0 && <p className="text-sm text-ink/60">Nenhum aviso arquivado</p>}
         {notices.map((notice) => (
           <div key={notice.id} className={rowClass}>
             <div className="w-20 shrink-0 text-center">
               <p className="text-xs text-ink/60">até</p>
               <p className="font-display text-lg font-bold leading-tight text-ink">{formatShortDate(notice.visibleUntil)}</p>
             </div>
-            <div className="h-10 w-0.5 shrink-0 rounded-full bg-brand/60 dark:bg-white/15" />
-            <p className="line-clamp-2 min-w-0 flex-1 text-sm text-ink">{notice.message}</p>
+            <div className="hidden h-10 w-0.5 shrink-0 rounded-full bg-brand/60 sm:block dark:bg-white/15" />
+            <p className="line-clamp-2 min-w-0 flex-1 basis-36 text-sm text-ink">{notice.message}</p>
             <ExpiryPill days={notice.daysLeft} />
           </div>
         ))}

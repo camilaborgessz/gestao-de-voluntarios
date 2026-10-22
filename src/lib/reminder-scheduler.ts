@@ -14,7 +14,8 @@ export function startReminderScheduler() {
     try {
       const summary = await runReminders();
       await purgeExpiredNotifications();
-      if (summary.created > 0 || summary.failed > 0) console.info("[lembretes]", summary);
+      const failed = summary.email.failed;
+      if (summary.created > 0 || failed > 0) console.info("[lembretes]", JSON.stringify(summary));
     } catch (error) {
       console.error("[lembretes] erro ao processar", error);
     }

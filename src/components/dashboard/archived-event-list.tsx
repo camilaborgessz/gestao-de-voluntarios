@@ -25,7 +25,7 @@ function ExpiryPill({ days }: { days: number }) {
 }
 
 const rowClass =
-  "flex items-center gap-4 rounded-[10px] border border-brand/[0.17] bg-surface px-4 py-3 dark:border-white/10 dark:bg-surface-raised";
+  "flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[10px] border border-brand/[0.17] bg-surface px-4 py-3 dark:border-white/10 dark:bg-surface-raised";
 
 /** Archived events: a short row each, with a read-only details dialog (no editing, no schedule). */
 export function ArchivedEventList({ events }: { events: ArchivedEvent[] }) {
@@ -43,8 +43,8 @@ export function ArchivedEventList({ events }: { events: ArchivedEvent[] }) {
                 {weekday} · {time}
               </p>
             </div>
-            <div className="h-10 w-0.5 shrink-0 rounded-full bg-brand/60 dark:bg-white/15" />
-            <p className="min-w-0 flex-1 truncate text-base font-medium text-ink">{event.title}</p>
+            <div className="hidden h-10 w-0.5 shrink-0 rounded-full bg-brand/60 sm:block dark:bg-white/15" />
+            <p className="min-w-0 flex-1 basis-36 truncate text-base font-medium text-ink">{event.title}</p>
             <ExpiryPill days={event.daysLeft} />
             <button
               type="button"

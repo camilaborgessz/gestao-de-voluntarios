@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { seatsTaken } from "@/lib/seats";
 import { auth } from "@/auth";
 import { scheduleSlotsArgs, toScheduleView } from "@/lib/event-schedule-view";
 import { CalendarBoard, type CalendarDayCell } from "@/components/dashboard/calendar-board";
@@ -38,9 +39,8 @@ export default async function AgendaPage({
       where: { startsAt: { gte: monthStart, lt: monthEnd } },
       orderBy: { startsAt: "asc" },
       include: {
-        _count: { select: { enrollments: { where: { status: "CONFIRMED" } } } },
         slots: scheduleSlotsArgs,
-        enrollments: { where: { userId: session?.user?.id ?? "", status: "CONFIRMED" }, select: { id: true, helpMode: true } },
+        enrollments: { where: { status: "CONFIRMED" }, select: { userId: true, helpMode: true } },
       },
     }),
     prisma.uniform.findMany({ orderBy: { name: "asc" } }),
@@ -55,9 +55,9 @@ export default async function AgendaPage({
     note: event.note,
     scheduleTitle: event.scheduleTitle,
     schedule: isVolunteer ? toScheduleView(event.slots) : undefined,
-    filled: event._count.enrollments,
-    joined: event.enrollments.length > 0,
-    joinedMode: event.enrollments[0]?.helpMode,
+    filled: seatsTaken(event.enrollments),
+    joined: event.enrollments.some((e) => e.userId === session?.user?.id),
+    joinedMode: event.enrollments.find((e) => e.userId === session?.user?.id)?.helpMode,
   }));
 
   const weeks: CalendarDayCell[][] = buildMonthGrid(year, month).map((week) =>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { requireAdminPage } from "@/lib/auth-guards";
 import { prisma } from "@/lib/prisma";
+import { seatsTaken } from "@/lib/seats";
 import { wallClockNow } from "@/lib/event-schedule";
 import {
   eventArchiveDaysLeft,
@@ -13,6 +14,7 @@ import { EventManagement } from "@/components/dashboard/event-management";
 import { UniformManagement } from "@/components/dashboard/uniform-management";
 import { NoticeManagement } from "@/components/dashboard/notice-management";
 import { ArchiveSection } from "@/components/dashboard/archive-section";
+import { LinkSpinner } from "@/components/dashboard/link-pending";
 
 const tabClass = (active: boolean) =>
   `flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-semibold transition duration-150 ease-out active:scale-95 ${
@@ -37,7 +39,7 @@ export default async function GestaoPage({ searchParams }: { searchParams: Promi
     prisma.event.findMany({
       where: { startsAt: { lt: startOfToday } },
       orderBy: { startsAt: "desc" },
-      include: { _count: { select: { enrollments: { where: { status: "CONFIRMED" } } } } },
+      include: { enrollments: { where: { status: "CONFIRMED" }, select: { helpMode: true } } },
     }),
     prisma.uniform.findMany({ orderBy: { name: "asc" } }),
     prisma.notice.findMany({ where: { visibleUntil: { gte: now } }, orderBy: { createdAt: "desc" } }),
@@ -53,6 +55,7 @@ export default async function GestaoPage({ searchParams }: { searchParams: Promi
       <nav aria-label="Seções da gestão" className="flex flex-wrap gap-2">
         <Link href={"/dashboard/eventos/novo" as Route} aria-current={showArchive ? undefined : "page"} className={tabClass(!showArchive)}>
           Em andamento
+          <LinkSpinner />
         </Link>
         <Link
           href={"/dashboard/eventos/novo?aba=arquivados" as Route}
@@ -60,6 +63,7 @@ export default async function GestaoPage({ searchParams }: { searchParams: Promi
           className={tabClass(showArchive)}
         >
           Arquivados
+          <LinkSpinner />
           <span
             className={`flex min-w-5 items-center justify-center rounded-full px-1.5 text-xs ${
               showArchive ? "bg-lime-from text-brand dark:bg-brand dark:text-lime-from" : "bg-brand/10 dark:bg-white/10"
@@ -79,7 +83,7 @@ export default async function GestaoPage({ searchParams }: { searchParams: Promi
             capacity: event.capacity,
             dressCode: event.dressCode,
             note: event.note,
-            filled: event._count.enrollments,
+            filled: seatsTaken(event.enrollments),
             daysLeft: eventArchiveDaysLeft(event.startsAt, now),
           }))}
           notices={archivedNotices.map((notice) => ({

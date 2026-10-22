@@ -12,7 +12,20 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { Check, Download, GripVertical, ImageIcon, Loader2, Plus, Redo2, Send, Trash2, Undo2, Users, X } from "lucide-react";
+import {
+  Check,
+  Download,
+  GripVertical,
+  ImageIcon,
+  Loader2,
+  Plus,
+  Redo2,
+  Send,
+  Trash2,
+  Undo2,
+  Users,
+  X,
+} from "lucide-react";
 import { saveSchedule } from "@/app/dashboard/escala/[id]/actions";
 import { DEFAULT_SCHEDULE_TITLE, NEW_SLOT_PREFIX } from "@/lib/schedule-defaults";
 import { describeEventDate, personChipText, renderScheduleImage, type ScheduleImageData } from "@/lib/schedule-image";
@@ -176,7 +189,8 @@ export function ScheduleBoard({
   const [revision, setRevision] = useState(0);
   const [share, setShare] = useState<{ url: string; blob: Blob } | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [shareMessage, setShareMessage] = useState<string | null>(null);
+  const [isSending, setIsSending] = useState(false);
+  const [shareMessage, setShareMessage] = useState<{ kind: "ok" | "info"; text: string; link?: string } | null>(null);
 
   const { weekdayLong, dateFull, time } = describeEventDate(startsAt);
 
@@ -489,19 +503,17 @@ export function ScheduleBoard({
   }
 
   /**
-   * Sends the picture itself (never text).
-   * - Phone/tablet: the system share sheet with the image attached; WhatsApp (the installed app) is one tap away.
-   * - Computer: opens WhatsApp Web straight away with the image already copied, ready to paste (Ctrl+V).
-   * (WhatsApp does not allow a link to attach a picture by itself, so these are the closest "direct" ways.)
+   * Sends the picture itself (never text), straight to the contact the person picks:
+   * - Wherever the browser has a share sheet (phones, tablets, Windows, Mac): it opens with the image
+   *   attached and WhatsApp in the list, so choosing the contact sends the picture. Nothing to paste.
+   * - Otherwise: WhatsApp Web (see `sendViaWhatsAppWeb`).
    */
   async function sendToWhatsApp() {
-    if (!share) return;
-    const file = new File([share.blob], fileName, { type: "image/png" });
-    const isMobile =
-      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); // iPadOS
-
-    if (isMobile) {
+    if (!share || isSending) return;
+    setIsSending(true);
+    setShareMessage(null);
+    try {
+      const file = new File([share.blob], fileName, { type: "image/png" });
       if (navigator.canShare?.({ files: [file] })) {
         try {
           await navigator.share({ files: [file] });
@@ -510,20 +522,45 @@ export function ScheduleBoard({
         }
         return;
       }
-      download();
-      setShareMessage("Imagem salva. Abra o WhatsApp e anexe na conversa.");
-      return;
+      await copyAndOpenWhatsAppWeb();
+    } finally {
+      setIsSending(false);
     }
+  }
 
-    // Open the tab first (while the click is still "fresh") so the browser does not block it.
-    window.open("https://web.whatsapp.com/", "_blank", "noopener,noreferrer");
+  /** WhatsApp Web has no way to receive a file from a link: the image is copied and only needs a Ctrl+V. */
+  async function sendViaWhatsAppWeb() {
+    if (!share || isSending) return;
+    setIsSending(true);
+    setShareMessage(null);
+    try {
+      await copyAndOpenWhatsAppWeb();
+    } finally {
+      setIsSending(false);
+    }
+  }
+
+  async function copyAndOpenWhatsAppWeb() {
+    if (!share) return;
+    // The copy must happen BEFORE the new tab opens: once it takes focus the browser refuses to touch the clipboard.
+    let copied = false;
     try {
       await navigator.clipboard.write([new ClipboardItem({ "image/png": share.blob })]);
-      setShareMessage("Imagem copiada. No WhatsApp Web, abra a conversa e cole com Ctrl+V.");
+      copied = true;
     } catch {
-      download();
-      setShareMessage("Imagem baixada. No WhatsApp Web, anexe o arquivo na conversa.");
+      // Clipboard blocked: fall back to downloading the file.
     }
+    if (!copied) download();
+
+    const tab = window.open("https://web.whatsapp.com/", "_blank");
+    if (tab) tab.opener = null;
+    const link = tab ? undefined : "https://web.whatsapp.com/";
+
+    setShareMessage(
+      copied
+        ? { kind: "ok", text: "Imagem copiada. No WhatsApp Web, abra a conversa e cole com Ctrl+V.", link }
+        : { kind: "info", text: "Imagem baixada. No WhatsApp Web, anexe o arquivo na conversa.", link },
+    );
   }
 
   return (
@@ -614,7 +651,7 @@ export function ScheduleBoard({
               }}
               maxLength={1000}
               rows={2}
-              placeholder="Opcional: recado para a equipe"
+              placeholder="Opcional"
               className={`${inputClass} resize-y`}
             />
           </label>
@@ -726,22 +763,14 @@ export function ScheduleBoard({
             </button>
           </div>
 
-          {pool.length > 0 && (
-            <p className="rounded-[8px] bg-warning-from/20 px-3 py-2 text-sm text-ink">
-              Atenção: {pool.length} voluntário(s) inscrito(s) ainda não estão em nenhuma entrada e não aparecem na escala.
-            </p>
-          )}
-
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={share.url} alt="Prévia da escala" className="w-full rounded-[10px] border border-ink/15" />
-
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
               onClick={sendToWhatsApp}
+              disabled={isSending}
               className="flex items-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-dark dark:bg-none dark:bg-lime-from dark:text-brand px-5 py-2.5 text-sm font-bold text-white transition duration-150 ease-out hover:scale-105 active:scale-95"
             >
-              <Send size={16} />
+              {isSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
               Enviar no WhatsApp
             </button>
             <button
@@ -752,13 +781,47 @@ export function ScheduleBoard({
               <Download size={16} />
               Baixar imagem
             </button>
+            <button
+              type="button"
+              onClick={sendViaWhatsAppWeb}
+              disabled={isSending}
+              className="flex items-center gap-2 rounded-full border border-brand px-5 py-2.5 text-sm font-bold text-brand transition duration-150 ease-out hover:scale-105 hover:bg-brand/10 active:scale-95 disabled:opacity-60 dark:text-lime-from"
+            >
+              WhatsApp Web
+            </button>
           </div>
 
           {shareMessage && (
-            <p role="status" className="text-sm font-medium text-ink/70">
-              {shareMessage}
+            <p
+              role="status"
+              className={`flex items-start gap-2 rounded-[10px] px-4 py-3 text-sm font-medium ${
+                shareMessage.kind === "ok" ? "bg-success-from/20 text-ink" : "bg-ink/5 text-ink dark:bg-white/10"
+              }`}
+            >
+              {shareMessage.kind === "ok" && <Check size={18} strokeWidth={3} className="mt-0.5 shrink-0 text-success-text" />}
+              <span>
+                {shareMessage.text}
+                {shareMessage.link && (
+                  <>
+                    {" "}
+                    <a href={shareMessage.link} target="_blank" rel="noopener noreferrer" className="font-bold underline">
+                      Abrir WhatsApp Web
+                    </a>
+                  </>
+                )}
+              </span>
             </p>
           )}
+
+          {pool.length > 0 && (
+            <p className="rounded-[8px] bg-warning-from/20 px-3 py-2 text-sm text-ink">
+              {pool.length} voluntário(s) sem entrada na escala
+            </p>
+          )}
+
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={share.url} alt="Prévia da escala" className="w-full rounded-[10px] border border-ink/15" />
+
         </Modal>
       )}
     </DndContext>

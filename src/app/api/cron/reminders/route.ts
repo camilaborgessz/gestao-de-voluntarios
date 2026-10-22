@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { purgeExpiredNotifications, runReminders } from "@/lib/reminders";
 
+// Sending emails one by one can take a while on a serverless host.
+export const maxDuration = 60;
+
 /**
  * Trigger for hosts without a long-running server (or an external scheduler such as cron-job.org / Vercel Cron).
  * Call it every 5-15 minutes with `Authorization: Bearer <CRON_SECRET>`.

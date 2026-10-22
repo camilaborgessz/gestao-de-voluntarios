@@ -24,9 +24,9 @@ const FILTERS: { value: Filter; label: string }[] = [
 const isAvailable = (event: EventRecord) => !event.joined && (event.filled ?? 0) < event.capacity;
 
 const EMPTY_MESSAGE: Record<Filter, string> = {
-  all: "Nenhum evento programado por enquanto.",
-  joined: "Você ainda não está participando de nenhum evento.",
-  available: "Nenhum evento com vagas no momento.",
+  all: "Nenhum evento programado",
+  joined: "Nenhum evento",
+  available: "Nenhum evento disponível",
 };
 
 type DialogState =
@@ -147,6 +147,7 @@ export function UpcomingEventsList({
                   joined={event.joined ?? false}
                   joinedMode={event.joinedMode}
                   full={(event.filled ?? 0) >= event.capacity}
+                  spotsLeft={event.capacity - (event.filled ?? 0)}
                   coupleOption={coupleOption}
                 defaultSpouseName={defaultSpouseName}
                 />
@@ -185,6 +186,7 @@ export function UpcomingEventsList({
                 joined={viewing.joined ?? false}
                 joinedMode={viewing.joinedMode}
                 full={(viewing.filled ?? 0) >= viewing.capacity}
+                spotsLeft={viewing.capacity - (viewing.filled ?? 0)}
                 coupleOption={coupleOption}
                 defaultSpouseName={defaultSpouseName}
               />

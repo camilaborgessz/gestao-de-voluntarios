@@ -1,11 +1,11 @@
 "use server";
 
-import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
-import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { adminActionError } from "@/lib/auth-guards";
+import { sendAccountEmail } from "@/lib/email";
+import { TOKEN_TTL_LABEL, issuePasswordToken, passwordLink } from "@/lib/password-tokens";
 
 // Every action below is admin-only.
 
@@ -21,11 +21,32 @@ const updateSchema = userSchema.extend({
   id: z.string().min(1),
 });
 
-export type ActionState = { error?: string; generatedPassword?: string } | undefined;
+/** What happened to the invitation email. `link` is only returned when the email could not be sent. */
+export interface InviteResult {
+  email: string;
+  sent: boolean;
+  link?: string;
+  /** "convite" the first time, "link de nova senha" for people who already have a password. */
+  kind: "INVITE" | "RESET";
+}
 
-function generateTempPassword() {
-  // 12-character URL-safe random password, shown once to whoever creates/resets the account.
-  return randomBytes(9).toString("base64url");
+export type ActionState = { error?: string; invite?: InviteResult } | undefined;
+
+/** Creates the one-time link and emails it. If the email is off or fails, the leader gets the link to pass on. */
+async function sendPasswordLink(user: { id: string; name: string; email: string; passwordHash: string | null }): Promise<InviteResult> {
+  const kind = user.passwordHash ? "RESET" : "INVITE";
+  const token = await issuePasswordToken(user.id, kind);
+  const link = await passwordLink(token);
+  const result = await sendAccountEmail({
+    to: user.email,
+    name: user.name,
+    kind,
+    link,
+    validFor: TOKEN_TTL_LABEL[kind],
+  });
+  return result.status === "SENT"
+    ? { email: user.email, sent: true, kind }
+    : { email: user.email, sent: false, link, kind };
 }
 
 export async function createUser(_prevState: ActionState, formData: FormData): Promise<ActionState> {
@@ -39,27 +60,19 @@ export async function createUser(_prevState: ActionState, formData: FormData): P
 
   const { name, email, phone, birthDate, role } = parsed.data;
 
-  const existing = await prisma.user.findUnique({ where: { email } });
+  const existing = await prisma.user.findFirst({ where: { email: { equals: email, mode: "insensitive" } } });
   if (existing) {
     return { error: "Já existe um usuário com esse email" };
   }
 
-  const password = generateTempPassword();
-  const passwordHash = await bcrypt.hash(password, 10);
-
-  await prisma.user.create({
-    data: {
-      name,
-      email,
-      phone: phone || null,
-      birthDate: birthDate ? new Date(birthDate) : null,
-      role,
-      passwordHash,
-    },
+  // No password: the person chooses it through the emailed link, so nobody else ever sees it.
+  const user = await prisma.user.create({
+    data: { name, email, phone: phone || null, birthDate: birthDate ? new Date(birthDate) : null, role },
   });
+  const invite = await sendPasswordLink(user);
 
   revalidatePath("/dashboard/voluntarios");
-  return { generatedPassword: password };
+  return { invite };
 }
 
 export async function updateUser(_prevState: ActionState, formData: FormData): Promise<ActionState> {
@@ -87,16 +100,18 @@ export async function updateUser(_prevState: ActionState, formData: FormData): P
   revalidatePath("/dashboard/voluntarios");
 }
 
-export async function resetUserPassword(id: string): Promise<string> {
+/** "Reenviar convite" (pending) or "Enviar link de nova senha" (active): a new link replaces the old one. */
+export async function resendPasswordLink(id: string): Promise<InviteResult> {
   if (await adminActionError()) throw new Error("Sem permissão");
 
-  const password = generateTempPassword();
-  const passwordHash = await bcrypt.hash(password, 10);
-
-  await prisma.user.update({ where: { id }, data: { passwordHash } });
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { id },
+    select: { id: true, name: true, email: true, passwordHash: true },
+  });
+  const invite = await sendPasswordLink(user);
 
   revalidatePath("/dashboard/voluntarios");
-  return password;
+  return invite;
 }
 
 export async function deleteUser(id: string) {

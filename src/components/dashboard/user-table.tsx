@@ -7,6 +7,8 @@ export interface UserRecord {
   phone: string | null;
   birthDate: Date | null;
   role: "ADMIN" | "VOLUNTEER";
+  /** Invited, but has not created a password yet. */
+  pending: boolean;
 }
 
 const roleLabel: Record<UserRecord["role"], string> = {
@@ -33,7 +35,8 @@ export function UserTable({
   onDelete: (user: UserRecord) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-[10px] border border-brand bg-surface/[0.57] dark:border-white/10 dark:bg-surface">
+    <div className="overflow-x-auto rounded-[10px] border border-brand bg-surface/[0.57] dark:border-white/10 dark:bg-surface">
+      <div className="min-w-[760px]">
       <div
         className={`grid ${columns} gap-2 bg-gradient-to-r from-brand to-brand-dark dark:bg-none dark:bg-surface-raised dark:text-lime-from px-6 py-3 text-sm font-bold text-white`}
       >
@@ -47,7 +50,7 @@ export function UserTable({
 
       <div className="divide-y divide-brand/40 dark:divide-white/10">
         {users.length === 0 && (
-          <p className="px-6 py-6 text-sm text-ink/60">Nenhum usuário cadastrado ainda.</p>
+          <p className="px-6 py-6 text-sm text-ink/60">Nenhum usuário cadastrado</p>
         )}
 
         {users.map((user) => (
@@ -59,7 +62,12 @@ export function UserTable({
             <span className="truncate text-sm font-medium text-ink">{formatDate(user.birthDate)}</span>
             <span className="truncate text-sm font-medium text-ink">{user.phone ?? "—"}</span>
             <span className="truncate text-sm font-medium text-ink">{user.email}</span>
-            <span className="truncate text-sm font-medium text-ink">{roleLabel[user.role]}</span>
+            <span className="flex items-center gap-2 truncate text-sm font-medium text-ink">
+              {roleLabel[user.role]}
+              {user.pending && (
+                <span className="rounded-full bg-warning-from/25 px-2 py-0.5 text-xs font-semibold text-ink">Pendente</span>
+              )}
+            </span>
             <div className="flex justify-end gap-2">
               <button
                 title="Apagar"
@@ -85,6 +93,7 @@ export function UserTable({
             </div>
           </div>
         ))}
+      </div>
       </div>
     </div>
   );

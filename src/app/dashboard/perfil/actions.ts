@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { MIN_PASSWORD_LENGTH, passwordProblem } from "@/lib/password-tokens";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Informe o nome"),
@@ -18,7 +19,7 @@ const profileSchema = z.object({
 const passwordSchema = z
   .object({
     currentPassword: z.string().min(1, "Informe a senha atual"),
-    newPassword: z.string().min(6, "A nova senha deve ter pelo menos 6 caracteres"),
+    newPassword: z.string().min(MIN_PASSWORD_LENGTH, `A nova senha deve ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres`),
     confirmPassword: z.string().min(1, "Confirme a nova senha"),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
@@ -40,6 +41,8 @@ export async function updateProfile(_prevState: ActionState, formData: FormData)
   }
 
   const { name, email, phone, birthDate, helpMode, spouseName } = parsed.data;
+  // Checkboxes: present in the form data only when ticked.
+  const notifyEmail = formData.get("notifyEmail") === "on";
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing && existing.id !== session.user.id) {
@@ -53,6 +56,7 @@ export async function updateProfile(_prevState: ActionState, formData: FormData)
       email,
       phone: phone || null,
       birthDate: birthDate ? new Date(birthDate) : null,
+      notifyEmail,
       ...(helpMode ? { helpMode, spouseName: helpMode === "COUPLE" ? spouseName || null : null } : {}),
     },
   });
@@ -75,9 +79,12 @@ export async function changePassword(_prevState: ActionState, formData: FormData
   const { currentPassword, newPassword } = parsed.data;
 
   const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-  if (!user) {
+  if (!user?.passwordHash) {
     return { error: "Usuário não encontrado" };
   }
+
+  const problem = await passwordProblem(newPassword);
+  if (problem) return { error: problem };
 
   const passwordsMatch = await bcrypt.compare(currentPassword, user.passwordHash);
   if (!passwordsMatch) {

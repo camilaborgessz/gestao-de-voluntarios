@@ -23,6 +23,7 @@ enum HelpMode {
 enum NotificationKind {
   REMINDER_24H
   REMINDER_12H
+  PASSWORD_RESET_REQUEST
 }
 
 enum DeliveryStatus {
@@ -44,17 +45,21 @@ model User {
   id           String     @id @default(cuid())
   name         String
   email        String     @unique
-  passwordHash String
+  /// null = invited but has not chosen a password yet ("pendente")
+  passwordHash String?
+  passwordChangedAt DateTime?
   role         Role       @default(VOLUNTEER)
   phone        String?
   birthDate    DateTime?
   helpMode     HelpMode   @default(INDIVIDUAL)
   spouseName   String?
+  notifyEmail    Boolean    @default(true)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
   enrollments  Enrollment[]
   notifications Notification[]
+  passwordTokens PasswordToken[]
 
   @@index([role])
 }
@@ -115,7 +120,6 @@ model Enrollment {
   slotId     String?
   position   Int              @default(0)
   remind24At DateTime?
-  remind12At DateTime?
   slot       EventSlot?       @relation(fields: [slotId], references: [id], onDelete: SetNull)
   status     EnrollmentStatus @default(PENDING)
   helpMode   HelpMode         @default(INDIVIDUAL)
@@ -141,10 +145,28 @@ model Notification {
   message          String
   createdAt        DateTime       @default(now())
   readAt           DateTime?
-  whatsappStatus   DeliveryStatus @default(PENDING)
-  whatsappError    String?
-  whatsappAttempts Int            @default(0)
+  emailStatus      DeliveryStatus @default(PENDING)
+  emailError       String?
+  emailAttempts    Int            @default(0)
 
   @@index([userId, createdAt])
-  @@index([whatsappStatus, createdAt])
+}
+
+enum PasswordTokenPurpose {
+  INVITE
+  RESET
+}
+
+/// One-time links to choose a password (invite / forgot password). Only the SHA-256 of the token is stored.
+model PasswordToken {
+  id        String               @id @default(cuid())
+  userId    String
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purpose   PasswordTokenPurpose
+  tokenHash String               @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime             @default(now())
+
+  @@index([userId])
 }

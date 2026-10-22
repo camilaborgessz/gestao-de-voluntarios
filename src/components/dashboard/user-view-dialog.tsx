@@ -53,7 +53,10 @@ export function UserViewDialog({
           </div>
           <div>
             <dt className="font-medium text-ink/60">Perfil</dt>
-            <dd className="text-ink">{roleLabel[user.role]}</dd>
+            <dd className="text-ink">
+              {roleLabel[user.role]}
+              {user.pending && " · Pendente (ainda não criou a senha)"}
+            </dd>
           </div>
         </dl>
 

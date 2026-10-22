@@ -9,7 +9,7 @@ export async function authenticate(
 ) {
   try {
     await signIn("credentials", {
-      email: formData.get("email"),
+      identifier: formData.get("identifier"),
       password: formData.get("password"),
       redirectTo: "/dashboard",
     });
@@ -17,7 +17,7 @@ export async function authenticate(
     if (error instanceof AuthError) {
       switch (error.type) {
         case "CredentialsSignin":
-          return "Email ou senha inválidos.";
+          return "Email, telefone ou senha inválidos";
         default:
           return "Algo deu errado. Tente novamente.";
       }
