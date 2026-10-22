@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { seatsFor, seatsTaken } from "@/lib/seats";
+import { initialReminderMarks } from "@/lib/notifications";
 
 export type ParticipationResult = { error?: string } | undefined;
 
@@ -45,15 +46,16 @@ export async function joinEvent(
       const spotsLeft = event.capacity - seatsTaken(event.enrollments);
       if (spotsLeft <= 0) return "Não há mais vagas neste evento";
       if (spotsLeft < seatsFor(helpMode)) return "Resta apenas 1 vaga. Participe sozinho(a).";
+      const reminderMarks = initialReminderMarks(event.startsAt);
 
       if (existing) {
         await tx.enrollment.update({
           where: { id: existing.id },
-          data: { status: "CONFIRMED", helpMode, spouseName: spouseName || null },
+          data: { status: "CONFIRMED", helpMode, spouseName: spouseName || null, ...reminderMarks },
         });
       } else {
         await tx.enrollment.create({
-          data: { userId, eventId, status: "CONFIRMED", helpMode, spouseName: spouseName || null },
+          data: { userId, eventId, status: "CONFIRMED", helpMode, spouseName: spouseName || null, ...reminderMarks },
         });
       }
       // Remember the spouse on the profile so the next signup comes pre-filled.
