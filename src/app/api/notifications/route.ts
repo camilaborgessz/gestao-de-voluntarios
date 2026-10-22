@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { NOTIFICATION_TTL_DAYS } from "@/lib/reminders";
+import { NOTIFICATION_TTL_DAYS } from "@/lib/notifications";
 
 const DAY_MS = 86_400_000;
 

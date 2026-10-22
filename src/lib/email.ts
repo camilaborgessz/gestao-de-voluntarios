@@ -3,7 +3,7 @@ import nodemailer, { type Transporter } from "nodemailer";
 export type DeliveryResult = { status: "SENT" | "SKIPPED" | "FAILED"; error?: string };
 
 /**
- * Reminder emails over plain SMTP, so any provider works. Free setup with a Gmail account:
+ * Account emails (invite / new password link) over plain SMTP, so any provider works. Free setup with a Gmail account:
  *
  *   1. Turn on 2-step verification on the Google account.
  *   2. Create an "App password" (myaccount.google.com/apppasswords).
@@ -19,24 +19,6 @@ export type DeliveryResult = { status: "SENT" | "SKIPPED" | "FAILED"; error?: st
  *
  * Emails are NOT sent unless EMAIL_ENABLED is "true" and SMTP_USER / SMTP_PASSWORD are set.
  */
-
-export interface ReminderEmail {
-  to: string;
-  name: string;
-  eventTitle: string;
-  /** e.g. "Sexta-feira, 16/10/2026 às 19:30" */
-  when: string;
-  /** e.g. "24 horas" */
-  lead: string;
-  uniform: string[];
-  note: string | null;
-  /** e.g. "ENTRADA 4 e 5 — Nave esquerda" */
-  slot: string | null;
-}
-
-export function isEmailEnabled() {
-  return process.env.EMAIL_ENABLED === "true" && Boolean(process.env.SMTP_USER && process.env.SMTP_PASSWORD);
-}
 
 let cached: Transporter | null = null;
 
@@ -57,68 +39,6 @@ function transporter() {
 
 const escapeHtml = (value: string) =>
   value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
-
-function buildMessage(email: ReminderEmail) {
-  const first = email.name.split(" ")[0];
-  const appUrl = process.env.APP_URL?.trim();
-  const details: [string, string][] = [["Quando", email.when]];
-  if (email.slot) details.push(["Sua entrada", email.slot]);
-  if (email.uniform.length > 0) details.push(["Traje", email.uniform.join(", ")]);
-
-  const text = [
-    `Olá, ${first}!`,
-    "",
-    `Lembrete: ${email.eventTitle} acontece em ${email.lead}.`,
-    "",
-    ...details.map(([label, value]) => `${label}: ${value}`),
-    ...(email.note ? ["", `Aviso: ${email.note}`] : []),
-    ...(appUrl ? ["", `Veja os detalhes: ${appUrl}`] : []),
-    "",
-    "Deus abençoe!",
-  ].join("\n");
-
-  const rows = details
-    .map(
-      ([label, value]) =>
-        `<tr><td style="padding:6px 16px 6px 0;color:#5b7773;font-size:14px">${escapeHtml(label)}</td><td style="padding:6px 0;font-size:15px;font-weight:600;color:#16302c">${escapeHtml(value)}</td></tr>`,
-    )
-    .join("");
-
-  const html = `<!doctype html><html lang="pt-BR"><body style="margin:0;background:#f3f6f6;font-family:Arial,Helvetica,sans-serif">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:24px 12px">
-<table role="presentation" width="100%" style="max-width:520px;background:#ffffff;border-radius:16px;overflow:hidden" cellspacing="0" cellpadding="0">
-<tr><td style="background:#02575c;padding:22px 28px;color:#e3f498;font-size:13px;letter-spacing:2px;font-weight:700">LEMBRETE DE SERVIÇO</td></tr>
-<tr><td style="padding:28px">
-<p style="margin:0 0 6px;font-size:16px;color:#16302c">Olá, ${escapeHtml(first)}!</p>
-<h1 style="margin:0 0 18px;font-size:24px;color:#16302c">${escapeHtml(email.eventTitle)}</h1>
-<p style="margin:0 0 16px;font-size:15px;color:#16302c">Faltam <strong>${escapeHtml(email.lead)}</strong> para o seu serviço.</p>
-<table role="presentation" cellspacing="0" cellpadding="0">${rows}</table>
-${email.note ? `<p style="margin:20px 0 0;padding:12px 14px;background:#fdf3d2;border-left:4px solid #e6b01b;border-radius:6px;font-size:14px;color:#16302c"><strong>Aviso:</strong> ${escapeHtml(email.note)}</p>` : ""}
-${appUrl ? `<p style="margin:24px 0 0"><a href="${escapeHtml(appUrl)}" style="display:inline-block;background:#02575c;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 22px;border-radius:999px">Abrir o sistema</a></p>` : ""}
-<p style="margin:24px 0 0;font-size:14px;color:#5b7773">Deus abençoe!</p>
-</td></tr></table></td></tr></table></body></html>`;
-
-  return { subject: `Lembrete: ${email.eventTitle} em ${email.lead}`, text, html };
-}
-
-export async function sendReminderEmail(email: ReminderEmail): Promise<DeliveryResult> {
-  if (process.env.EMAIL_ENABLED !== "true") return { status: "SKIPPED", error: "Envio por e-mail desativado" };
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
-    return { status: "SKIPPED", error: "E-mail não configurado (faltam SMTP_USER e SMTP_PASSWORD)" };
-  }
-
-  try {
-    const message = buildMessage(email);
-    await transporter().sendMail({
-      from: process.env.EMAIL_FROM || `"Koinonia" <${process.env.SMTP_USER}>`,
-      to: email.to,
-      ...message,
-    });
-    return { status: "SENT" };
-  } catch (error) {
-    return { status: "FAILED", error: (error instanceof Error ? error.message : "falha ao enviar").slice(0, 300) };
-  }
-}
 
 export interface AccountEmail {
   to: string;
@@ -162,7 +82,7 @@ function buildAccountMessage({ name, kind, link, validFor }: AccountEmail) {
   return { subject, text, html };
 }
 
-/** Sends the "create / reset your password" link. Same SMTP setup and result values as the reminders. */
+/** Sends the "create / reset your password" link. Uses the SMTP settings above. */
 export async function sendAccountEmail(email: AccountEmail): Promise<DeliveryResult> {
   if (process.env.EMAIL_ENABLED !== "true") return { status: "SKIPPED", error: "Envio por e-mail desativado" };
   if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {

@@ -7,7 +7,7 @@ import { VerseCard } from "@/components/dashboard/verse-card";
 import { NoticesCard, type Notice } from "@/components/dashboard/notices-card";
 import { after } from "next/server";
 import { purgeExpiredArchive } from "@/lib/archive";
-import { purgeExpiredNotifications } from "@/lib/reminders";
+import { purgeExpiredNotifications } from "@/lib/notifications";
 import { scheduleSlotsArgs, toScheduleView } from "@/lib/event-schedule-view";
 import { getVerseOfTheDay } from "@/lib/verse-of-the-day";
 import { formatShortDate, wallClockNow } from "@/lib/event-schedule";

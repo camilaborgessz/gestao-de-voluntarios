@@ -18,7 +18,6 @@ export type ProfileUser = {
   birthDate: Date | null;
   helpMode: "INDIVIDUAL" | "COUPLE";
   spouseName: string | null;
-  notifyEmail: boolean;
 };
 
 const helpModeOptions = [
@@ -134,16 +133,6 @@ export function ProfileForm({ user, showHelpMode = false }: { user: ProfileUser;
             )}
           </fieldset>
         )}
-
-        <label className="flex cursor-pointer items-center gap-3 text-sm text-ink">
-          <input
-            type="checkbox"
-            name="notifyEmail"
-            defaultChecked={user.notifyEmail}
-            className="size-4 cursor-pointer accent-brand dark:accent-lime-from"
-          />
-          Receber lembretes por e-mail
-        </label>
 
         {state?.error && <p className="text-sm text-danger-text">{state.error}</p>}
 

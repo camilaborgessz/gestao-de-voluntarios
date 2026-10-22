@@ -12,7 +12,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-bg">
-      <Topbar />
+      <Topbar showNotifications={session.user.role === "ADMIN"} />
       <div className="flex flex-1">
         <Sidebar role={session.user.role} />
         <main className="min-w-0 flex-1 py-6 pl-24 pr-4 sm:px-10 sm:py-8 sm:pl-[116px]">
