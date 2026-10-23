@@ -56,6 +56,7 @@ async function handleRequest(identifier: string) {
     validFor: TOKEN_TTL_LABEL[kind],
   });
   if (result.status === "SENT") return;
+  console.error("[email] link de senha não enviado:", result.status, result.error);
 
   await notifyAdmins(user.name, user.email);
 }

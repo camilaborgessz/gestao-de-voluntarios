@@ -44,6 +44,7 @@ async function sendPasswordLink(user: { id: string; name: string; email: string;
     link,
     validFor: TOKEN_TTL_LABEL[kind],
   });
+  if (result.status !== "SENT") console.error("[email] link de senha não enviado:", result.status, result.error);
   return result.status === "SENT"
     ? { email: user.email, sent: true, kind }
     : { email: user.email, sent: false, link, kind };
