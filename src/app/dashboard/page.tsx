@@ -7,6 +7,14 @@ import { VerseCard } from "@/components/dashboard/verse-card";
 import { NoticesCard, type Notice } from "@/components/dashboard/notices-card";
 import { TopVolunteersCard } from "@/components/dashboard/top-volunteers-card";
 import { getTopVolunteers } from "@/lib/leaderboard";
+import { getLeaderOverview } from "@/lib/leader-overview";
+import {
+  BirthdaysCard,
+  MonthFrequencyCard,
+  QuietVolunteersCard,
+  StatsRow,
+  UnscheduledCard,
+} from "@/components/dashboard/leader-overview";
 import { after } from "next/server";
 import { purgeExpiredArchive } from "@/lib/archive";
 import { purgeExpiredNotifications } from "@/lib/notifications";
@@ -31,7 +39,7 @@ export default async function DashboardPage() {
   // Archived items older than 30 days are deleted without slowing this response down.
   after(() => Promise.all([purgeExpiredArchive(), purgeExpiredNotifications()]));
 
-  const [verseOfTheDay, rawEvents, totalUpcoming, rawNotices, uniforms, topVolunteers] = await Promise.all([
+  const [verseOfTheDay, rawEvents, totalUpcoming, rawNotices, uniforms, topVolunteers, overview] = await Promise.all([
     getVerseOfTheDay(),
     prisma.event.findMany({
       where: { startsAt: { gte: startOfToday } },
@@ -49,6 +57,7 @@ export default async function DashboardPage() {
     }),
     prisma.uniform.findMany({ orderBy: { name: "asc" } }),
     isVolunteer ? Promise.resolve([]) : getTopVolunteers(),
+    isVolunteer ? Promise.resolve(null) : getLeaderOverview(),
   ]);
 
   const upcomingEvents: EventRecord[] = rawEvents.map((event) => ({
@@ -83,8 +92,11 @@ export default async function DashboardPage() {
         </h1>
       </div>
 
+      {overview && <StatsRow stats={overview.stats} />}
+
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <section className="lg:col-span-2">
+        <section className="flex flex-col gap-8 lg:col-span-2">
+          <div>
           <div className="mb-4 flex items-center gap-2">
             <h2 className="text-xl font-medium text-ink lg:text-2xl">Próximos eventos</h2>
             <span
@@ -109,6 +121,20 @@ export default async function DashboardPage() {
               />
             )}
           </div>
+          </div>
+
+          {overview && (
+            <>
+              <div>
+                <h2 className="mb-4 text-xl font-medium text-ink lg:text-2xl">Escalas a montar</h2>
+                <UnscheduledCard events={overview.unscheduled} />
+              </div>
+              <div>
+                <h2 className="mb-4 text-xl font-medium text-ink lg:text-2xl">Frequência no mês</h2>
+                <MonthFrequencyCard overview={overview} />
+              </div>
+            </>
+          )}
         </section>
 
         <section className="flex flex-col gap-6">
@@ -129,6 +155,19 @@ export default async function DashboardPage() {
               <h2 className="mb-4 text-xl font-medium text-ink lg:text-2xl">Mais assíduos</h2>
               <TopVolunteersCard volunteers={topVolunteers} />
             </div>
+          )}
+
+          {overview && (
+            <>
+              <div>
+                <h2 className="mb-4 text-xl font-medium text-ink lg:text-2xl">Aniversariantes da semana</h2>
+                <BirthdaysCard people={overview.birthdays} />
+              </div>
+              <div>
+                <h2 className="mb-4 text-xl font-medium text-ink lg:text-2xl">Ainda não serviram</h2>
+                <QuietVolunteersCard people={overview.quiet} />
+              </div>
+            </>
           )}
         </section>
       </div>

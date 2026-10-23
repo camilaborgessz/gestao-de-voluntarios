@@ -60,3 +60,40 @@ export async function purgeExpiredNotifications() {
   });
   return count;
 }
+
+/**
+ * Tells every leader (bell) that a volunteer just signed up for an event. Never breaks the signup itself:
+ * a failure here is ignored. The same notice is not repeated within 10 minutes (cancel + join again).
+ */
+export async function notifyLeadersOfSignup(params: {
+  volunteerName: string;
+  spouseName?: string | null;
+  eventId: string;
+  eventTitle: string;
+  startsAt: Date;
+}) {
+  try {
+    const who = params.spouseName ? `${params.volunteerName} e ${params.spouseName}` : params.volunteerName;
+    const { dateFull, time } = describeEventDate(params.startsAt);
+    const message = `${who} vai participar de "${params.eventTitle}" (${dateFull} às ${time}).`;
+
+    const repeated = await prisma.notification.findFirst({
+      where: { kind: "VOLUNTEER_JOINED", message, createdAt: { gt: new Date(Date.now() - 10 * 60_000) } },
+      select: { id: true },
+    });
+    if (repeated) return;
+
+    const leaders = await prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } });
+    await prisma.notification.createMany({
+      data: leaders.map((leader) => ({
+        userId: leader.id,
+        eventId: params.eventId,
+        kind: "VOLUNTEER_JOINED" as const,
+        title: "Nova participação",
+        message,
+      })),
+    });
+  } catch (error) {
+    console.error("[notificacoes] aviso de nova participação falhou:", error);
+  }
+}

@@ -24,6 +24,7 @@ enum NotificationKind {
   REMINDER_24H
   REMINDER_12H
   PASSWORD_RESET_REQUEST
+  VOLUNTEER_JOINED
 }
 
 enum DeliveryStatus {

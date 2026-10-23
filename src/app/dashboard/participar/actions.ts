@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { seatsFor, seatsTaken } from "@/lib/seats";
-import { initialReminderMarks } from "@/lib/notifications";
+import { initialReminderMarks, notifyLeadersOfSignup } from "@/lib/notifications";
 
 export type ParticipationResult = { error?: string } | undefined;
 
@@ -27,12 +27,14 @@ export async function joinEvent(
   const spouseName = helpMode === "COUPLE" ? spouseNameInput.trim().slice(0, 120) : "";
   if (helpMode === "COUPLE" && !spouseName) return { error: "Informe o nome do cônjuge" };
 
+  let signedUp: { title: string; startsAt: Date } | null = null;
   try {
     const result = await prisma.$transaction(async (tx) => {
       const event = await tx.event.findUnique({
         where: { id: eventId },
         select: {
           capacity: true,
+          title: true,
           startsAt: true,
           enrollments: { where: { status: "CONFIRMED" }, select: { helpMode: true } },
         },
@@ -62,13 +64,23 @@ export async function joinEvent(
       if (spouseName) {
         await tx.user.updateMany({ where: { id: userId, spouseName: null }, data: { spouseName } });
       }
-      return null;
+      return { event };
     });
-    if (result) return { error: result };
+    if (typeof result === "string") return { error: result };
+    signedUp = result.event;
   } catch {
     return { error: "Não foi possível confirmar sua participação. Tente novamente." };
   }
 
+  if (signedUp) {
+    await notifyLeadersOfSignup({
+      volunteerName: session.user.name ?? "Um voluntário",
+      spouseName: spouseName || null,
+      eventId,
+      eventTitle: signedUp.title,
+      startsAt: signedUp.startsAt,
+    });
+  }
   revalidateEventPages();
 }
 
