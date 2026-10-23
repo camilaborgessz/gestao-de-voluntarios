@@ -38,22 +38,12 @@ export interface UnscheduledEvent {
   total: number;
 }
 
-export interface WeekBar {
-  label: string;
-  done: number;
-  planned: number;
-}
-
 export interface LeaderOverview {
   stats: LeaderStats;
   birthdays: BirthdayPerson[];
   quiet: QuietVolunteer[];
   unscheduled: UnscheduledEvent[];
-  weeks: WeekBar[];
-  monthName: string;
 }
-
-const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
 /** Numbers and lists for the leader's dashboard. Dates use the wall-clock convention (see `wallClockNow`). */
 export async function getLeaderOverview(): Promise<LeaderOverview> {
@@ -64,7 +54,7 @@ export async function getLeaderOverview(): Promise<LeaderOverview> {
   const monthStart = new Date(Date.UTC(year, month, 1));
   const nextMonthStart = new Date(Date.UTC(year, month + 1, 1));
 
-  const [users, upcoming, monthEvents] = await Promise.all([
+  const [users, upcoming, eventsThisMonth] = await Promise.all([
     prisma.user.findMany({
       select: {
         id: true,
@@ -74,7 +64,6 @@ export async function getLeaderOverview(): Promise<LeaderOverview> {
         role: true,
         birthDate: true,
         passwordHash: true,
-        servicesDone: true,
         enrollments: { where: { status: "CONFIRMED" }, select: { event: { select: { startsAt: true } } } },
       },
     }),
@@ -89,19 +78,18 @@ export async function getLeaderOverview(): Promise<LeaderOverview> {
         enrollments: { where: { status: "CONFIRMED" }, select: { helpMode: true, slotId: true } },
       },
     }),
-    prisma.event.findMany({
-      where: { startsAt: { gte: monthStart, lt: nextMonthStart } },
-      select: { startsAt: true, enrollments: { where: { status: "CONFIRMED" }, select: { id: true } } },
-    }),
+    prisma.event.count({ where: { startsAt: { gte: monthStart, lt: nextMonthStart } } }),
   ]);
 
-  // ---- people: who never served yet, and birthdays in the next 7 days
+  // ---- people: who has not served yet this month, and birthdays in the next 7 days
   const quiet: QuietVolunteer[] = [];
   const birthdays: BirthdayPerson[] = [];
   for (const user of users) {
-    const past = user.enrollments.filter((enrollment) => enrollment.event.startsAt < now).length;
-    const hasUpcoming = user.enrollments.length > past;
-    if (user.role === "VOLUNTEER" && user.passwordHash && user.servicesDone + past === 0) {
+    const servedThisMonth = user.enrollments.filter(
+      (enrollment) => enrollment.event.startsAt >= monthStart && enrollment.event.startsAt < now,
+    ).length;
+    const hasUpcoming = user.enrollments.some((enrollment) => enrollment.event.startsAt >= now);
+    if (user.role === "VOLUNTEER" && user.passwordHash && servedThisMonth === 0) {
       quiet.push({ id: user.id, name: user.name, contact: user.phone ?? user.email, hasUpcoming });
     }
 
@@ -138,30 +126,15 @@ export async function getLeaderOverview(): Promise<LeaderOverview> {
     }
   }
 
-  // ---- volunteers per week of the current month (done = already happened, planned = still to come)
-  const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
-  const weekCount = Math.ceil(lastDay / 7);
-  const weeks: WeekBar[] = Array.from({ length: weekCount }, (_, index) => {
-    const from = index * 7 + 1;
-    const to = Math.min(from + 6, lastDay);
-    return { label: `${from}–${to}`, done: 0, planned: 0 };
-  });
-  for (const event of monthEvents) {
-    const week = Math.min(Math.floor((event.startsAt.getUTCDate() - 1) / 7), weekCount - 1);
-    weeks[week][event.startsAt < now ? "done" : "planned"] += event.enrollments.length;
-  }
-
   return {
     stats: {
       activeVolunteers: users.filter((user) => user.role === "VOLUNTEER" && user.passwordHash).length,
-      eventsThisMonth: monthEvents.length,
+      eventsThisMonth,
       fillPercent: capacity > 0 ? Math.round((taken / capacity) * 100) : null,
       unscheduledEvents: unscheduled.length,
     },
     birthdays,
     quiet,
     unscheduled,
-    weeks,
-    monthName: MONTHS[month],
   };
 }

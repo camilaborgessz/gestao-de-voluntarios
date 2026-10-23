@@ -23,10 +23,11 @@ const tabClass = (active: boolean) =>
       : "border-brand/40 text-brand hover:bg-brand/10 dark:border-lime-from/40 dark:text-lime-from dark:hover:bg-white/10"
   }`;
 
-export default async function GestaoPage({ searchParams }: { searchParams: Promise<{ aba?: string }> }) {
+export default async function GestaoPage({ searchParams }: { searchParams: Promise<{ aba?: string; filtro?: string }> }) {
   await requireAdminPage();
-  const { aba } = await searchParams;
+  const { aba, filtro } = await searchParams;
   const showArchive = aba === "arquivados";
+  const onlyPending = filtro === "pendentes" && !showArchive;
 
   // Anything archived for more than 30 days is removed before listing.
   await purgeExpiredArchive();
@@ -35,7 +36,11 @@ export default async function GestaoPage({ searchParams }: { searchParams: Promi
   const startOfToday = startOfTodayWallClock(now);
 
   const [events, archivedEvents, uniforms, notices, archivedNotices] = await Promise.all([
-    prisma.event.findMany({ where: { startsAt: { gte: startOfToday } }, orderBy: { startsAt: "asc" } }),
+    prisma.event.findMany({
+      where: { startsAt: { gte: startOfToday } },
+      orderBy: { startsAt: "asc" },
+      include: { enrollments: { where: { status: "CONFIRMED" }, select: { helpMode: true, slotId: true } } },
+    }),
     prisma.event.findMany({
       where: { startsAt: { lt: startOfToday } },
       orderBy: { startsAt: "desc" },
@@ -47,6 +52,15 @@ export default async function GestaoPage({ searchParams }: { searchParams: Promi
   ]);
 
   const archivedCount = archivedEvents.length + archivedNotices.length;
+
+  // Events that still need the leader: spots (vagas) left to fill, or volunteers not placed in the escala yet.
+  const visibleEvents = events
+    .map(({ enrollments, ...event }) => ({
+      ...event,
+      filled: seatsTaken(enrollments),
+      pending: seatsTaken(enrollments) < event.capacity || enrollments.some((enrollment) => !enrollment.slotId),
+    }))
+    .filter((event) => !onlyPending || event.pending);
 
   return (
     <div className="flex flex-col gap-6">
@@ -95,7 +109,21 @@ export default async function GestaoPage({ searchParams }: { searchParams: Promi
         />
       ) : (
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          <EventManagement events={events} uniforms={uniforms.map((u) => u.name)} />
+          <div className="flex flex-col gap-4">
+            {onlyPending && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-brand/30 bg-lime-from/30 px-4 py-2.5 text-sm text-ink dark:border-lime-from/30 dark:bg-white/5">
+                <span>Mostrando só eventos com vagas em aberto ou escala por montar.</span>
+                <Link
+                  href={"/dashboard/eventos/novo" as Route}
+                  className="flex items-center gap-2 font-semibold text-brand underline-offset-4 hover:underline dark:text-lime-from"
+                >
+                  Ver todos
+                  <LinkSpinner />
+                </Link>
+              </div>
+            )}
+            <EventManagement events={visibleEvents} uniforms={uniforms.map((u) => u.name)} />
+          </div>
 
           <section className="flex flex-col gap-6">
             <UniformManagement uniforms={uniforms} />
