@@ -6,7 +6,7 @@ export interface TopVolunteer {
   name: string;
   /** Services done: confirmed spots in events that already happened (including ones already archived). */
   services: number;
-  /** 1 for the top; people with the same number of services share the position. */
+  /** Position in the ranking (1 = top). Ties are broken by who served most recently, then by name. */
   rank: number;
 }
 
@@ -21,21 +21,27 @@ export async function getTopVolunteers(limit = 15): Promise<TopVolunteer[]> {
       id: true,
       name: true,
       servicesDone: true,
-      _count: { select: { enrollments: { where: { status: "CONFIRMED", event: { startsAt: { lt: now } } } } } },
+      enrollments: {
+        where: { status: "CONFIRMED", event: { startsAt: { lt: now } } },
+        select: { event: { select: { startsAt: true } } },
+      },
     },
   });
 
   const ranked = users
-    .map((user) => ({ id: user.id, name: user.name, services: user.servicesDone + user._count.enrollments }))
+    .map((user) => ({
+      id: user.id,
+      name: user.name,
+      services: user.servicesDone + user.enrollments.length,
+      // Events older than the archive are gone, so "last served" only looks at the ones still stored.
+      lastServed: user.enrollments.reduce((latest, { event }) => Math.max(latest, event.startsAt.getTime()), 0),
+    }))
     .filter((user) => user.services > 0)
-    .sort((a, b) => b.services - a.services || a.name.localeCompare(b.name, "pt-BR"))
+    .sort(
+      (a, b) =>
+        b.services - a.services || b.lastServed - a.lastServed || a.name.localeCompare(b.name, "pt-BR"),
+    )
     .slice(0, limit);
 
-  let rank = 0;
-  let previous = -1;
-  return ranked.map((user, index) => {
-    if (user.services !== previous) rank = index + 1;
-    previous = user.services;
-    return { ...user, rank };
-  });
+  return ranked.map(({ id, name, services }, index) => ({ id, name, services, rank: index + 1 }));
 }
