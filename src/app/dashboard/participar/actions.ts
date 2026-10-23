@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { seatsFor, seatsTaken } from "@/lib/seats";
 import { initialReminderMarks, notifyLeadersOfSignup } from "@/lib/notifications";
 
 export type ParticipationResult = { error?: string } | undefined;
@@ -14,7 +13,7 @@ function revalidateEventPages() {
   revalidatePath("/dashboard/eventos/novo");
 }
 
-/** Volunteer takes a spot (vaga) in the event: one when alone, two together with their spouse. */
+/** Volunteer signs up for the event. There is no limit: the event's capacity is only a goal (meta). */
 export async function joinEvent(
   eventId: string,
   helpMode: "INDIVIDUAL" | "COUPLE" = "INDIVIDUAL",
@@ -33,10 +32,8 @@ export async function joinEvent(
       const event = await tx.event.findUnique({
         where: { id: eventId },
         select: {
-          capacity: true,
           title: true,
           startsAt: true,
-          enrollments: { where: { status: "CONFIRMED" }, select: { helpMode: true } },
         },
       });
       if (!event) return "Evento não encontrado";
@@ -45,9 +42,6 @@ export async function joinEvent(
         where: { userId_eventId: { userId, eventId } },
       });
       if (existing?.status === "CONFIRMED") return "Você já está participando deste evento";
-      const spotsLeft = event.capacity - seatsTaken(event.enrollments);
-      if (spotsLeft <= 0) return "Não há mais vagas neste evento";
-      if (spotsLeft < seatsFor(helpMode)) return "Resta apenas 1 vaga. Participe sozinho(a).";
       const reminderMarks = initialReminderMarks(event.startsAt);
 
       if (existing) {

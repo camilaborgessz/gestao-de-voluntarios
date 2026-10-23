@@ -21,7 +21,7 @@ const FILTERS: { value: Filter; label: string }[] = [
 ];
 
 /** Not joined yet and still has room. */
-const isAvailable = (event: EventRecord) => !event.joined && (event.filled ?? 0) < event.capacity;
+const isAvailable = (event: EventRecord) => !event.joined;
 
 const EMPTY_MESSAGE: Record<Filter, string> = {
   all: "Nenhum evento programado",
@@ -146,8 +146,6 @@ export function UpcomingEventsList({
                   eventId={event.id}
                   joined={event.joined ?? false}
                   joinedMode={event.joinedMode}
-                  full={(event.filled ?? 0) >= event.capacity}
-                  spotsLeft={event.capacity - (event.filled ?? 0)}
                   coupleOption={coupleOption}
                 defaultSpouseName={defaultSpouseName}
                 />
@@ -185,8 +183,6 @@ export function UpcomingEventsList({
                 eventId={viewing.id}
                 joined={viewing.joined ?? false}
                 joinedMode={viewing.joinedMode}
-                full={(viewing.filled ?? 0) >= viewing.capacity}
-                spotsLeft={viewing.capacity - (viewing.filled ?? 0)}
                 coupleOption={coupleOption}
                 defaultSpouseName={defaultSpouseName}
               />

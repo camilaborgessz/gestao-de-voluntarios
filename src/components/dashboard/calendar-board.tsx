@@ -39,8 +39,8 @@ const MAX_VISIBLE_EVENTS = 3;
 
 const statusLegend: { status: Status; label: string }[] = [
   { status: "danger", label: "Faltam voluntários" },
-  { status: "warning", label: "Quase completo" },
-  { status: "success", label: "Completo" },
+  { status: "warning", label: "Quase lá" },
+  { status: "success", label: "Meta batida" },
 ];
 
 const gridLine = "border-[#a0d0c8] dark:border-white/10";
@@ -354,8 +354,6 @@ export function CalendarBoard({
                 eventId={viewing.id}
                 joined={viewing.joined ?? false}
                 joinedMode={viewing.joinedMode}
-                full={(viewing.filled ?? 0) >= viewing.capacity}
-                spotsLeft={viewing.capacity - (viewing.filled ?? 0)}
                 coupleOption={coupleOption}
                 defaultSpouseName={defaultSpouseName}
               />

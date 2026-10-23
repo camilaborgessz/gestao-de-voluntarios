@@ -22,7 +22,7 @@ export function StatsRow({ stats }: { stats: LeaderStats }) {
   const items: { icon: typeof Users; value: string; label: string }[] = [
     { icon: Users, value: String(stats.activeVolunteers), label: "Voluntários ativos" },
     { icon: CalendarCheck, value: String(stats.eventsThisMonth), label: "Eventos neste mês" },
-    { icon: UsersRound, value: stats.fillPercent === null ? "—" : `${stats.fillPercent}%`, label: "Vagas preenchidas nos próximos eventos" },
+    { icon: UsersRound, value: stats.fillPercent === null ? "—" : `${stats.fillPercent}%`, label: "Meta de voluntários nos próximos eventos" },
     { icon: CalendarX, value: String(stats.unscheduledEvents), label: "Escalas a montar" },
   ];
 

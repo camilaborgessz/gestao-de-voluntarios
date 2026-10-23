@@ -106,7 +106,7 @@ export function EventFormDialog({
           </div>
 
           <label className="flex flex-col gap-1 text-sm font-medium text-ink">
-            Vagas
+            Meta de voluntários
             <input
               name="capacity"
               type="number"

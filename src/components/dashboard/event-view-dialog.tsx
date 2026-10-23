@@ -162,9 +162,9 @@ export function EventViewDialog({
             </div>
           </div>
           <div>
-            <dt className="font-medium text-ink/60">Vagas</dt>
+            <dt className="font-medium text-ink/60">Voluntários</dt>
             <dd className="text-ink">
-              {event.filled !== undefined ? `${event.filled}/${event.capacity} preenchidas` : event.capacity}
+              {event.filled !== undefined ? `${event.filled} de ${event.capacity} (meta)` : event.capacity}
             </dd>
           </div>
           {event.note && !(event.schedule && event.schedule.length > 0) && (
