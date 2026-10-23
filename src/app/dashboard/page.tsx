@@ -5,6 +5,8 @@ import { UpcomingEventsList } from "@/components/dashboard/upcoming-events-list"
 import type { EventRecord } from "@/components/dashboard/event-management";
 import { VerseCard } from "@/components/dashboard/verse-card";
 import { NoticesCard, type Notice } from "@/components/dashboard/notices-card";
+import { TopVolunteersCard } from "@/components/dashboard/top-volunteers-card";
+import { getTopVolunteers } from "@/lib/leaderboard";
 import { after } from "next/server";
 import { purgeExpiredArchive } from "@/lib/archive";
 import { purgeExpiredNotifications } from "@/lib/notifications";
@@ -29,7 +31,7 @@ export default async function DashboardPage() {
   // Archived items older than 30 days are deleted without slowing this response down.
   after(() => Promise.all([purgeExpiredArchive(), purgeExpiredNotifications()]));
 
-  const [verseOfTheDay, rawEvents, totalUpcoming, rawNotices, uniforms] = await Promise.all([
+  const [verseOfTheDay, rawEvents, totalUpcoming, rawNotices, uniforms, topVolunteers] = await Promise.all([
     getVerseOfTheDay(),
     prisma.event.findMany({
       where: { startsAt: { gte: startOfToday } },
@@ -46,6 +48,7 @@ export default async function DashboardPage() {
       orderBy: { createdAt: "desc" },
     }),
     prisma.uniform.findMany({ orderBy: { name: "asc" } }),
+    isVolunteer ? Promise.resolve([]) : getTopVolunteers(),
   ]);
 
   const upcomingEvents: EventRecord[] = rawEvents.map((event) => ({
@@ -120,6 +123,13 @@ export default async function DashboardPage() {
             <h2 className="mb-4 text-xl font-medium text-ink lg:text-2xl">Avisos</h2>
             <NoticesCard notices={notices} initialCount={2} />
           </div>
+
+          {!isVolunteer && (
+            <div>
+              <h2 className="mb-4 text-xl font-medium text-ink lg:text-2xl">Mais assíduos</h2>
+              <TopVolunteersCard volunteers={topVolunteers} />
+            </div>
+          )}
         </section>
       </div>
     </div>

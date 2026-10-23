@@ -48,6 +48,8 @@ model User {
   /// null = invited but has not chosen a password yet ("pendente")
   passwordHash String?
   passwordChangedAt DateTime?
+  /// Services done in events that were already deleted from the archive (past events are kept 30 days only)
+  servicesDone Int @default(0)
   role         Role       @default(VOLUNTEER)
   phone        String?
   birthDate    DateTime?
