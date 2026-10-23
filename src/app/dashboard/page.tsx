@@ -1,7 +1,4 @@
-import Link from "next/link";
-import type { Route } from "next";
 import { auth } from "@/auth";
-import { LinkSpinner } from "@/components/dashboard/link-pending";
 import { prisma } from "@/lib/prisma";
 import { seatsTaken } from "@/lib/seats";
 import { UpcomingEventsList } from "@/components/dashboard/upcoming-events-list";
@@ -13,7 +10,6 @@ import { getTopVolunteers } from "@/lib/leaderboard";
 import { getLeaderOverview } from "@/lib/leader-overview";
 import {
   BirthdaysCard,
-  PENDING_HREF,
   QuietVolunteersCard,
   StatsRow,
   UnscheduledCard,
@@ -129,16 +125,7 @@ export default async function DashboardPage() {
           {overview && (
             <>
               <div>
-                <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-                  <h2 className="text-xl font-medium text-ink lg:text-2xl">Escalas a montar</h2>
-                  <Link
-                    href={PENDING_HREF as Route}
-                    className="flex items-center gap-2 text-sm font-semibold text-brand underline-offset-4 hover:underline dark:text-lime-from"
-                  >
-                    Ver eventos
-                    <LinkSpinner />
-                  </Link>
-                </div>
+                <h2 className="mb-4 text-xl font-medium text-ink lg:text-2xl">Escalas a montar</h2>
                 <UnscheduledCard events={overview.unscheduled} />
               </div>
             </>

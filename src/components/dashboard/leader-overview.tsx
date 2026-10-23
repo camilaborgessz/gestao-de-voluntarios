@@ -4,8 +4,6 @@ import { Cake, CalendarCheck, CalendarX, Users, UsersRound } from "lucide-react"
 import { ExpandableList } from "./expandable-list";
 import type { BirthdayPerson, LeaderStats, QuietVolunteer, UnscheduledEvent } from "@/lib/leader-overview";
 
-export const PENDING_HREF = "/dashboard/eventos/novo?filtro=pendentes";
-
 const card = "rounded-[10px] bg-surface p-5 shadow-[0_4px_37px_rgba(0,0,0,0.1)]";
 const row = "flex items-center gap-3 rounded-[10px] border border-brand/[0.17] px-4 py-2.5 dark:border-white/10";
 
@@ -21,16 +19,16 @@ const eventFormat = new Intl.DateTimeFormat("pt-BR", {
 
 /** The four headline numbers at the top of the leader's dashboard. */
 export function StatsRow({ stats }: { stats: LeaderStats }) {
-  const items: { icon: typeof Users; value: string; label: string; href?: string }[] = [
+  const items: { icon: typeof Users; value: string; label: string }[] = [
     { icon: Users, value: String(stats.activeVolunteers), label: "Voluntários ativos" },
     { icon: CalendarCheck, value: String(stats.eventsThisMonth), label: "Eventos neste mês" },
     { icon: UsersRound, value: stats.fillPercent === null ? "—" : `${stats.fillPercent}%`, label: "Vagas preenchidas nos próximos eventos" },
-    { icon: CalendarX, value: String(stats.unscheduledEvents), label: "Escalas a montar", href: PENDING_HREF },
+    { icon: CalendarX, value: String(stats.unscheduledEvents), label: "Escalas a montar" },
   ];
 
   return (
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      {items.map(({ icon: Icon, value, label, href }) => {
+      {items.map(({ icon: Icon, value, label }) => {
         const body = (
           <>
             <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-lime-from/60 text-brand dark:bg-white/10 dark:text-lime-from">
@@ -42,15 +40,7 @@ export function StatsRow({ stats }: { stats: LeaderStats }) {
             </div>
           </>
         );
-        return href ? (
-          <Link
-            key={label}
-            href={href as Route}
-            className={`${card} flex items-center gap-4 transition duration-150 ease-out hover:scale-[1.02] active:scale-[0.99]`}
-          >
-            {body}
-          </Link>
-        ) : (
+        return (
           <div key={label} className={`${card} flex items-center gap-4`}>
             {body}
           </div>
@@ -117,7 +107,7 @@ export function UnscheduledCard({ events }: { events: UnscheduledEvent[] }) {
         items={events.map((event) => (
           <li key={event.id}>
             <Link
-              href={PENDING_HREF as Route}
+              href={`/dashboard/escala/${event.id}` as Route}
               className={`${row} transition-colors duration-150 hover:bg-brand/5 dark:hover:bg-white/5`}
             >
               <div className="min-w-0 flex-1">
@@ -125,7 +115,7 @@ export function UnscheduledCard({ events }: { events: UnscheduledEvent[] }) {
                 <p className="text-xs capitalize text-ink/70">{eventFormat.format(event.startsAt)}</p>
               </div>
               <span className="shrink-0 text-sm font-medium text-ink/70">
-                {event.unplaced} de {event.total} sem entrada
+                {event.unplaced} {event.unplaced === 1 ? "voluntário sem entrada" : "voluntários sem entrada"}
               </span>
             </Link>
           </li>
