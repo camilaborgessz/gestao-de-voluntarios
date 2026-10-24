@@ -334,14 +334,20 @@ export async function renderScheduleImage(data: ScheduleImageData): Promise<Blob
   let cursor = headerH + 32;
   if (noteH) {
     ctx.save();
-    roundRect(ctx, M, cursor, innerW, noteH, 22);
-    ctx.clip();
-    ctx.fillStyle = "#fdf3d2";
-    ctx.fillRect(M, cursor, innerW, noteH);
-    ctx.fillStyle = C.warningTo;
-    ctx.fillRect(M, cursor, 10, noteH);
+    ctx.shadowColor = "rgba(2, 87, 92, 0.14)";
+    ctx.shadowBlur = 26;
+    ctx.shadowOffsetY = 8;
+    ctx.fillStyle = C.white;
+    roundRect(ctx, M, cursor, innerW, noteH, 26);
+    ctx.fill();
     ctx.restore();
-    ctx.fillStyle = "#8a6400";
+
+    // accent bar, same as the entry cards
+    ctx.fillStyle = C.brand;
+    roundRect(ctx, M, cursor + 22, 8, 40, [0, 4, 4, 0]);
+    ctx.fill();
+
+    ctx.fillStyle = C.brand;
     ctx.font = f(700, 20);
     ctx.fillText("AVISO", M + 34, cursor + 24 + 12);
     ctx.fillStyle = C.brandDark;

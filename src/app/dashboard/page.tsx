@@ -55,7 +55,7 @@ export default async function DashboardPage() {
       orderBy: { createdAt: "desc" },
     }),
     prisma.uniform.findMany({ orderBy: { name: "asc" } }),
-    isVolunteer ? Promise.resolve([]) : getTopVolunteers(),
+    getTopVolunteers(),
     isVolunteer ? Promise.resolve(null) : getLeaderOverview(),
   ]);
 
@@ -147,12 +147,10 @@ export default async function DashboardPage() {
             <NoticesCard notices={notices} initialCount={2} />
           </div>
 
-          {!isVolunteer && (
-            <div>
-              <h2 className="mb-4 text-xl font-medium text-ink lg:text-2xl">Mais assíduos</h2>
-              <TopVolunteersCard volunteers={topVolunteers} />
-            </div>
-          )}
+          <div>
+            <h2 className="mb-4 text-xl font-medium text-ink lg:text-2xl">Mais assíduos</h2>
+            <TopVolunteersCard volunteers={topVolunteers} />
+          </div>
 
           {overview && (
             <>

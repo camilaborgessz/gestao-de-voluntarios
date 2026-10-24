@@ -20,39 +20,6 @@ export function initialReminderMarks(startsAt: Date, now = wallClockNow()) {
   return { remind24At: passed ? new Date() : null };
 }
 
-/**
- * Creates the bell notice for the user's events that start within the next 24 hours. It runs when the
- * person opens the app (the bell asks for their notifications), so it needs no scheduler or server that
- * stays on. Each notice is "claimed" in the database first, so it is created only once.
- */
-export async function createDueReminders(userId: string, now = wallClockNow()) {
-  const due = await prisma.enrollment.findMany({
-    where: {
-      userId,
-      status: "CONFIRMED",
-      remind24At: null,
-      event: { startsAt: { gt: now, lte: new Date(now.getTime() + REMINDER_HOURS * HOUR_MS) } },
-    },
-    select: { id: true, event: { select: { id: true, title: true, startsAt: true } } },
-  });
-
-  for (const { id, event } of due) {
-    const claimed = await prisma.enrollment.updateMany({ where: { id, remind24At: null }, data: { remind24At: new Date() } });
-    if (claimed.count === 0) continue; // another request took it
-
-    const { weekdayLong, dateFull, time } = describeEventDate(event.startsAt);
-    await prisma.notification.create({
-      data: {
-        userId,
-        eventId: event.id,
-        kind: "REMINDER_24H",
-        title: `Lembrete: ${event.title}`,
-        message: `Seu evento é ${weekdayLong}, ${dateFull} às ${time}.`,
-      },
-    });
-  }
-}
-
 /** Deletes notifications older than `NOTIFICATION_TTL_DAYS` days. Returns how many were removed. */
 export async function purgeExpiredNotifications() {
   const { count } = await prisma.notification.deleteMany({

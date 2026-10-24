@@ -41,6 +41,8 @@ export async function updateProfile(_prevState: ActionState, formData: FormData)
   }
 
   const { name, email, phone, birthDate, helpMode, spouseName } = parsed.data;
+  // Checkboxes are present in the form data only when ticked.
+  const notifyEmail = formData.get("notifyEmail") === "on";
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing && existing.id !== session.user.id) {
@@ -54,6 +56,7 @@ export async function updateProfile(_prevState: ActionState, formData: FormData)
       email,
       phone: phone || null,
       birthDate: birthDate ? new Date(birthDate) : null,
+      notifyEmail,
       ...(helpMode ? { helpMode, spouseName: helpMode === "COUPLE" ? spouseName || null : null } : {}),
     },
   });

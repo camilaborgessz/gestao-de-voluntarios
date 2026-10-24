@@ -190,7 +190,7 @@ export function ScheduleBoard({
   const [share, setShare] = useState<{ url: string; blob: Blob } | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [shareMessage, setShareMessage] = useState<{ kind: "ok" | "info"; text: string; link?: string } | null>(null);
+  const [canShareImage, setCanShareImage] = useState(false);
 
   const { weekdayLong, dateFull, time } = describeEventDate(startsAt);
 
@@ -468,7 +468,6 @@ export function ScheduleBoard({
   const fileName = `escala-${dateFull.replaceAll("/", "-")}.png`;
 
   async function generate() {
-    setShareMessage(null);
     setIsGenerating(true);
     try {
       const data: ScheduleImageData = {
@@ -486,6 +485,9 @@ export function ScheduleBoard({
         })),
       };
       const blob = await renderScheduleImage(data);
+      // The share sheet (with WhatsApp) only exists on touch devices; computers just download the picture.
+      const probe = new File([blob], fileName, { type: "image/png" });
+      setCanShareImage(window.matchMedia("(pointer: coarse)").matches && !!navigator.canShare?.({ files: [probe] }));
       setShare({ url: URL.createObjectURL(blob), blob });
     } catch {
       setSaveState({ kind: "error", text: "Não foi possível gerar a imagem." });
@@ -503,64 +505,21 @@ export function ScheduleBoard({
   }
 
   /**
-   * Sends the picture itself (never text), straight to the contact the person picks:
-   * - Wherever the browser has a share sheet (phones, tablets, Windows, Mac): it opens with the image
-   *   attached and WhatsApp in the list, so choosing the contact sends the picture. Nothing to paste.
-   * - Otherwise: WhatsApp Web (see `sendViaWhatsAppWeb`).
+   * "Enviar no WhatsApp" only exists on phones and tablets: their share sheet takes the picture and lets the
+   * person choose the contact. Computers have no way to send a file to WhatsApp from a web page, so there
+   * the only option is "Baixar imagem".
    */
   async function sendToWhatsApp() {
     if (!share || isSending) return;
     setIsSending(true);
-    setShareMessage(null);
     try {
       const file = new File([share.blob], fileName, { type: "image/png" });
-      if (navigator.canShare?.({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file] });
-        } catch {
-          // The user closed the share sheet; nothing to do.
-        }
-        return;
-      }
-      await copyAndOpenWhatsAppWeb();
-    } finally {
-      setIsSending(false);
-    }
-  }
-
-  /** WhatsApp Web has no way to receive a file from a link: the image is copied and only needs a Ctrl+V. */
-  async function sendViaWhatsAppWeb() {
-    if (!share || isSending) return;
-    setIsSending(true);
-    setShareMessage(null);
-    try {
-      await copyAndOpenWhatsAppWeb();
-    } finally {
-      setIsSending(false);
-    }
-  }
-
-  async function copyAndOpenWhatsAppWeb() {
-    if (!share) return;
-    // The copy must happen BEFORE the new tab opens: once it takes focus the browser refuses to touch the clipboard.
-    let copied = false;
-    try {
-      await navigator.clipboard.write([new ClipboardItem({ "image/png": share.blob })]);
-      copied = true;
+      await navigator.share({ files: [file] });
     } catch {
-      // Clipboard blocked: fall back to downloading the file.
+      // The person closed the share sheet; nothing to do.
+    } finally {
+      setIsSending(false);
     }
-    if (!copied) download();
-
-    const tab = window.open("https://web.whatsapp.com/", "_blank");
-    if (tab) tab.opener = null;
-    const link = tab ? undefined : "https://web.whatsapp.com/";
-
-    setShareMessage(
-      copied
-        ? { kind: "ok", text: "Imagem copiada. No WhatsApp Web, abra a conversa e cole com Ctrl+V.", link }
-        : { kind: "info", text: "Imagem baixada. No WhatsApp Web, anexe o arquivo na conversa.", link },
-    );
   }
 
   return (
@@ -764,6 +723,7 @@ export function ScheduleBoard({
           </div>
 
           <div className="flex flex-wrap gap-3">
+            {canShareImage && (
             <button
               type="button"
               onClick={sendToWhatsApp}
@@ -773,45 +733,20 @@ export function ScheduleBoard({
               {isSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
               Enviar no WhatsApp
             </button>
+            )}
             <button
               type="button"
               onClick={download}
-              className="flex items-center gap-2 rounded-full border border-brand px-5 py-2.5 text-sm font-bold text-brand transition duration-150 ease-out hover:scale-105 hover:bg-brand/10 active:scale-95 dark:text-lime-from"
+              className={
+                canShareImage
+                  ? "flex items-center gap-2 rounded-full border border-brand px-5 py-2.5 text-sm font-bold text-brand transition duration-150 ease-out hover:scale-105 hover:bg-brand/10 active:scale-95 dark:text-lime-from"
+                  : "flex items-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-dark px-5 py-2.5 text-sm font-bold text-white transition duration-150 ease-out hover:scale-105 hover:brightness-110 active:scale-95 dark:bg-none dark:bg-lime-from dark:text-brand"
+              }
             >
               <Download size={16} />
               Baixar imagem
             </button>
-            <button
-              type="button"
-              onClick={sendViaWhatsAppWeb}
-              disabled={isSending}
-              className="flex items-center gap-2 rounded-full border border-brand px-5 py-2.5 text-sm font-bold text-brand transition duration-150 ease-out hover:scale-105 hover:bg-brand/10 active:scale-95 disabled:opacity-60 dark:text-lime-from"
-            >
-              WhatsApp Web
-            </button>
           </div>
-
-          {shareMessage && (
-            <p
-              role="status"
-              className={`flex items-start gap-2 rounded-[10px] px-4 py-3 text-sm font-medium ${
-                shareMessage.kind === "ok" ? "bg-success-from/20 text-ink" : "bg-ink/5 text-ink dark:bg-white/10"
-              }`}
-            >
-              {shareMessage.kind === "ok" && <Check size={18} strokeWidth={3} className="mt-0.5 shrink-0 text-success-text" />}
-              <span>
-                {shareMessage.text}
-                {shareMessage.link && (
-                  <>
-                    {" "}
-                    <a href={shareMessage.link} target="_blank" rel="noopener noreferrer" className="font-bold underline">
-                      Abrir WhatsApp Web
-                    </a>
-                  </>
-                )}
-              </span>
-            </p>
-          )}
 
           {pool.length > 0 && (
             <p className="rounded-[8px] bg-warning-from/20 px-3 py-2 text-sm text-ink">

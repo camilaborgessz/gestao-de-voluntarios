@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { NOTIFICATION_TTL_DAYS, createDueReminders } from "@/lib/notifications";
+import { NOTIFICATION_TTL_DAYS } from "@/lib/notifications";
 
 const DAY_MS = 86_400_000;
 
@@ -14,8 +14,6 @@ export async function GET() {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const userId = session.user.id;
-
-  await createDueReminders(userId);
 
   const [items, unread] = await Promise.all([
     prisma.notification.findMany({
