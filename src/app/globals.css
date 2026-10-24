@@ -128,3 +128,12 @@ button:disabled {
 .auth-input:autofill {
   background-color: transparent !important;
 }
+
+/* iPhones zoom the page when a field with text smaller than 16px gets focus: keep fields at 16px on small screens. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}

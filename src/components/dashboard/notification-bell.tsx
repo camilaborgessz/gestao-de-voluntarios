@@ -119,13 +119,13 @@ export function NotificationBell() {
         <div
           role="dialog"
           aria-label="Notificações"
-          className="absolute right-0 top-full z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-[14px] border border-brand/15 bg-surface shadow-[0_12px_36px_rgba(0,0,0,0.2)] dark:border-white/10 dark:bg-surface-raised"
+          className="fixed inset-x-4 top-[4.5rem] z-50 overflow-hidden md:absolute md:inset-x-auto md:right-0 md:top-full md:mt-2 md:w-[22rem] rounded-[14px] border border-brand/15 bg-surface shadow-[0_12px_36px_rgba(0,0,0,0.2)] dark:border-white/10 dark:bg-surface-raised"
         >
           <div className="border-b border-brand/10 px-4 py-3 dark:border-white/10">
             <p className="text-base font-semibold text-ink">Notificações</p>
           </div>
 
-          <div className="max-h-[22rem] overflow-y-auto">
+          <div className="max-h-[60dvh] overflow-y-auto md:max-h-[22rem]">
             {items.length === 0 ? (
               <div className="flex flex-col items-center gap-2 px-4 py-8 text-center text-sm text-ink/60">
                 <BellOff size={24} />
