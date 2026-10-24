@@ -41,7 +41,7 @@ export function StatsRow({ stats }: { stats: LeaderStats }) {
           </>
         );
         return (
-          <div key={label} className={`${card} flex items-center gap-4`}>
+          <div key={label} className={`${card} flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4`}>
             {body}
           </div>
         );
@@ -108,9 +108,9 @@ export function UnscheduledCard({ events }: { events: UnscheduledEvent[] }) {
           <li key={event.id}>
             <Link
               href={`/dashboard/escala/${event.id}` as Route}
-              className={`${row} transition-colors duration-150 hover:bg-brand/5 dark:hover:bg-white/5`}
+              className={`${row} flex-wrap transition-colors duration-150 hover:bg-brand/5 dark:hover:bg-white/5`}
             >
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 basis-40">
                 <p className="truncate text-sm font-semibold text-ink">{event.title}</p>
                 <p className="text-xs capitalize text-ink/70">{eventFormat.format(event.startsAt)}</p>
               </div>

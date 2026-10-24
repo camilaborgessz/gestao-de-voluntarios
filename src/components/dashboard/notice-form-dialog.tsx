@@ -38,7 +38,7 @@ export function NoticeFormDialog({ notice, onClose }: { notice: NoticeRecord | n
       onClose={onClose}
       labelledBy="notice-form-title"
       closeOnBackdrop={!isPending}
-      className="w-full max-w-md rounded-[15px] bg-surface p-6 shadow-xl"
+      className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-[15px] bg-surface p-5 shadow-xl sm:p-6"
     >
       <div>
         <div className="mb-4 flex items-center justify-between">

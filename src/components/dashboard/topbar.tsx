@@ -6,7 +6,7 @@ import { NotificationBell } from "./notification-bell";
 export function Topbar() {
   return (
     <header
-      className="sticky top-0 z-30 flex h-[89px] w-full items-center justify-between bg-surface px-10 shadow-[0_4px_20px_rgba(0,0,0,0.06)] dark:bg-brand"
+      className="sticky top-0 z-30 flex h-16 w-full items-center justify-between bg-surface px-4 shadow-[0_4px_20px_rgba(0,0,0,0.06)] dark:bg-brand md:h-[89px] md:px-10"
       style={{ viewTransitionName: "dash-topbar" }}
     >
       <Image
@@ -16,7 +16,7 @@ export function Topbar() {
         height={61}
         priority
         unoptimized
-        className="dark:hidden"
+        className="h-9 w-auto md:h-[61px] dark:hidden"
       />
       <Image
         src="/logo-dark.png"
@@ -25,10 +25,10 @@ export function Topbar() {
         height={61}
         priority
         unoptimized
-        className="hidden dark:block"
+        className="hidden h-9 w-auto md:h-[61px] dark:block"
       />
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3">
         <NotificationBell />
         <ThemeToggle />
         <button className="flex size-10 items-center justify-center rounded-full bg-lime-from/40 text-brand dark:bg-white/10 dark:text-lime-from transition duration-150 ease-out hover:scale-110 hover:bg-lime-from/60 dark:hover:bg-white/20 active:scale-95">

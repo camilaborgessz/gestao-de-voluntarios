@@ -9,7 +9,7 @@ import { EventViewDialog } from "./event-view-dialog";
 import { ConfirmDialog } from "./confirm-dialog";
 import { ParticipateButton } from "./participate-button";
 import { deleteEvent } from "@/app/dashboard/eventos/novo/actions";
-import { toDateInputValue, MONTH_NAMES, WEEKDAYS_SHORT } from "@/lib/event-schedule";
+import { toDateInputValue, formatEventSchedule, MONTH_NAMES, WEEKDAYS_SHORT } from "@/lib/event-schedule";
 import { applyParticipation } from "@/lib/optimistic-participation";
 
 export interface CalendarDayCell {
@@ -137,7 +137,7 @@ export function CalendarBoard({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-semibold text-ink lg:text-4xl">Calendário e escalas</h1>
         {!readOnly && (
           <button
@@ -150,7 +150,7 @@ export function CalendarBoard({
         )}
       </div>
 
-      <div className="rounded-[10px] bg-surface p-6 shadow-[0_4px_30px_rgba(0,0,0,0.18)]">
+      <div className="rounded-[10px] bg-surface p-4 shadow-[0_4px_30px_rgba(0,0,0,0.18)] sm:p-6">
         <div className="mb-4 flex items-center gap-2">
           <h2 className="text-xl font-semibold text-ink">
             {MONTH_NAMES[month]} de {year}
@@ -197,12 +197,12 @@ export function CalendarBoard({
         </div>
 
         <div className="overflow-x-auto">
-          <div className="min-w-[640px]">
+          <div className="min-w-0">
         <div className="mb-2 grid grid-cols-7">
           {WEEKDAYS_SHORT.map((label, index) => (
             <div
               key={label}
-              className={`px-2 text-center text-xs font-semibold uppercase tracking-wide ${
+              className={`px-0.5 text-center text-[10px] font-semibold uppercase tracking-wide sm:px-2 sm:text-xs ${
                 index === 0 || index === 6 ? "text-brand/55 dark:text-lime-from/60" : "text-ink/45"
               }`}
             >
@@ -234,7 +234,7 @@ export function CalendarBoard({
                         ? () => openDialog({ mode: "create", date: cell.iso! })
                         : undefined
                     }
-                    className={`group relative min-h-[190px] p-2 ${
+                    className={`group relative min-h-[64px] p-1 sm:min-h-[190px] sm:p-2 ${
                       dayIndex !== 6 ? `border-r-[0.5px] ${gridLine}` : ""
                     } ${weekIndex !== weeks.length - 1 ? `border-b-[0.5px] ${gridLine}` : ""} ${
                       cell.weekend ? "bg-[#e5f0ef] dark:bg-[#1e3934]" : "bg-surface"
@@ -242,7 +242,7 @@ export function CalendarBoard({
                   >
                     <span
                       aria-current={isToday ? "date" : undefined}
-                      className={`absolute top-2 right-2 z-10 flex size-[26px] items-center justify-center rounded-full text-sm ${
+                      className={`absolute top-1 right-1 z-10 flex size-[22px] items-center justify-center rounded-full text-xs sm:top-2 sm:right-2 sm:size-[26px] sm:text-sm ${
                         isToday ? "bg-lime-from font-bold text-brand" : "font-medium text-ink/60"
                       }`}
                     >
@@ -257,13 +257,22 @@ export function CalendarBoard({
                           e.stopPropagation();
                           openDialog({ mode: "create", date: cell.iso! });
                         }}
-                        className="absolute left-2 top-2 z-10 flex size-[26px] items-center justify-center rounded-md text-ink/55 opacity-0 transition duration-150 ease-out hover:bg-ink/15 hover:text-ink/90 focus-visible:opacity-100 group-hover:opacity-80 dark:text-white/45 dark:hover:bg-white/15 dark:hover:text-white/90"
+                        className="absolute left-2 top-2 z-10 hidden size-[26px] items-center justify-center rounded-md sm:flex text-ink/55 opacity-0 transition duration-150 ease-out hover:bg-ink/15 hover:text-ink/90 focus-visible:opacity-100 group-hover:opacity-80 dark:text-white/45 dark:hover:bg-white/15 dark:hover:text-white/90"
                       >
                         <Plus size={15} strokeWidth={2} />
                       </button>
                     )}
 
-                    <div className="mt-8 flex flex-col gap-1.5">
+                    <div className="mt-6 flex flex-wrap gap-1 sm:hidden">
+                      {dayEvents.map((event) => (
+                        <span
+                          key={event.id}
+                          className={`size-2 rounded-full bg-gradient-to-b ${statusDot[getStatus(event.filled ?? 0, event.capacity)]}`}
+                        />
+                      ))}
+                    </div>
+
+                    <div className="mt-8 hidden flex-col gap-1.5 sm:flex">
                       {visibleEvents.map((event) => {
                         const filled = event.filled ?? 0;
                         const status = getStatus(filled, event.capacity);
@@ -317,6 +326,34 @@ export function CalendarBoard({
 
           </div>
         </div>
+
+        {events.length > 0 && (
+          <div className="mt-4 flex flex-col gap-2 sm:hidden">
+            {[...events]
+              .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())
+              .map((event) => {
+                const { date, weekday, time } = formatEventSchedule(event.startsAt);
+                const filled = event.filled ?? 0;
+                return (
+                  <button
+                    key={event.id}
+                    type="button"
+                    onClick={() => openDialog({ mode: "view", event })}
+                    className="flex items-center gap-3 rounded-[10px] border border-brand/[0.17] px-3 py-2.5 text-left active:bg-brand/5 dark:border-white/10"
+                  >
+                    <span className="w-14 shrink-0 font-display text-lg font-bold leading-tight text-ink">{date}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-ink">{event.title}</span>
+                      <span className="block text-xs text-ink/70">
+                        {weekday} · {time} · {filled}/{event.capacity}
+                      </span>
+                    </span>
+                    <span className={`size-2.5 shrink-0 rounded-full bg-gradient-to-b ${statusDot[getStatus(filled, event.capacity)]}`} />
+                  </button>
+                );
+              })}
+          </div>
+        )}
 
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-ink/55">
           {statusLegend.map(({ status, label }) => (

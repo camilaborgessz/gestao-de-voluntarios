@@ -74,7 +74,7 @@ export function ProfileForm({ user, showHelpMode = false }: { user: ProfileUser;
           />
         </label>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-1.5">
             <span className="text-base font-medium text-ink">Nascimento</span>
             <DatePicker value={birthDate} onChange={setBirthDate} />

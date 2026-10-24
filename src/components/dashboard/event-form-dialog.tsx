@@ -54,7 +54,7 @@ export function EventFormDialog({
       onClose={onClose}
       labelledBy="event-form-title"
       closeOnBackdrop={!isPending}
-      className="w-full max-w-md rounded-[15px] bg-surface p-6 shadow-xl"
+      className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-[15px] bg-surface p-5 shadow-xl sm:p-6"
     >
       <div>
         <div className="mb-4 flex items-center justify-between">
@@ -86,7 +86,7 @@ export function EventFormDialog({
             />
           </label>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1 text-sm font-medium text-ink">
               Data
               <DatePicker value={date} onChange={setDate} defaultYear={new Date().getFullYear()} />

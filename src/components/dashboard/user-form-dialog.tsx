@@ -59,7 +59,7 @@ export function UserFormDialog({ user, onClose }: { user: UserRecord | null; onC
   if (invite) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-        <div className="w-full max-w-md rounded-[15px] bg-surface p-6 text-center shadow-xl">
+        <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-[15px] bg-surface p-5 text-center shadow-xl sm:p-6">
           <h2 className="text-xl font-semibold text-ink">
             {invite.sent ? (invite.kind === "INVITE" ? "Convite enviado" : "Link enviado") : "E-mail não enviado"}
           </h2>
@@ -95,7 +95,7 @@ export function UserFormDialog({ user, onClose }: { user: UserRecord | null; onC
   return (
     <>
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-[15px] bg-surface p-6 shadow-xl">
+      <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-[15px] bg-surface p-5 shadow-xl sm:p-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-ink">{isEdit ? "Editar usuário" : "Novo usuário"}</h2>
           <button onClick={onClose} title="Fechar" className="text-ink/60 transition-colors hover:text-ink">
@@ -131,7 +131,7 @@ export function UserFormDialog({ user, onClose }: { user: UserRecord | null; onC
             />
           </label>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1 text-sm font-medium text-ink">
               Nascimento
               <DatePicker value={birthDate} onChange={setBirthDate} />

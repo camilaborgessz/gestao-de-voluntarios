@@ -34,7 +34,7 @@ export function UniformFormDialog({ uniform, onClose }: { uniform: UniformRecord
       onClose={onClose}
       labelledBy="uniform-form-title"
       closeOnBackdrop={!isPending}
-      className="w-full max-w-sm rounded-[15px] bg-surface p-6 shadow-xl"
+      className="max-h-[90dvh] w-full max-w-sm overflow-y-auto rounded-[15px] bg-surface p-5 shadow-xl sm:p-6"
     >
       <div>
         <div className="mb-4 flex items-center justify-between">

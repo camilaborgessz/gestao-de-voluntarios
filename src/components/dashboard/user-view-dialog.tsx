@@ -24,7 +24,7 @@ export function UserViewDialog({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-[15px] bg-surface p-6 shadow-xl">
+      <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-[15px] bg-surface p-5 shadow-xl sm:p-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-ink">Detalhes do usuário</h2>
           <button onClick={onClose} title="Fechar" className="text-ink/60 transition-colors hover:text-ink">
@@ -41,7 +41,7 @@ export function UserViewDialog({
             <dt className="font-medium text-ink/60">Email</dt>
             <dd className="text-ink">{user.email}</dd>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <dt className="font-medium text-ink/60">Nascimento</dt>
               <dd className="text-ink">{formatDate(user.birthDate)}</dd>

@@ -36,7 +36,7 @@ export function ConfirmDialog({
       onClose={onCancel}
       labelledBy="confirm-dialog-title"
       closeOnBackdrop={!isLoading}
-      className="relative w-full max-w-[440px] rounded-[15px] bg-surface px-8 py-8 text-center shadow-xl"
+      className="relative w-full max-w-[440px] rounded-[15px] bg-surface px-5 py-7 text-center shadow-xl sm:px-8 sm:py-8"
     >
       <div>
         <button
