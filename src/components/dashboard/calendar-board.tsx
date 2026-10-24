@@ -83,6 +83,8 @@ export function CalendarBoard({
   const [isDeleting, startDelete] = useTransition();
   const [isNavigating, startNavigate] = useTransition();
   const [navDir, setNavDir] = useState<"prev" | "next" | null>(null);
+  // Phones: the day the person tapped, whose events are listed under the calendar.
+  const [selectedIso, setSelectedIso] = useState<string | null>(null);
 
   function toggleDayExpanded(iso: string) {
     setExpandedDays((prev) => {
@@ -133,6 +135,33 @@ export function CalendarBoard({
       }
       setDialog({ mode: "closed" });
     });
+  }
+
+  // A day picked in another month no longer applies after navigating.
+  const selectedDay = selectedIso && weeks.some((week) => week.some((cell) => cell.iso === selectedIso)) ? selectedIso : null;
+  const selectedEvents = selectedDay ? (eventsByIso.get(selectedDay) ?? []) : [];
+  const sortedEvents = [...events].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+
+  function renderEventRow(event: EventRecord) {
+    const { date, weekday, time } = formatEventSchedule(event.startsAt);
+    const filled = event.filled ?? 0;
+    return (
+      <button
+        key={event.id}
+        type="button"
+        onClick={() => openDialog({ mode: "view", event })}
+        className="flex items-center gap-3 rounded-[10px] border border-brand/[0.17] px-3 py-2.5 text-left active:bg-brand/5 dark:border-white/10"
+      >
+        <span className="w-14 shrink-0 font-display text-lg font-bold leading-tight text-ink">{date}</span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold text-ink">{event.title}</span>
+          <span className="block text-xs text-ink/70">
+            {weekday} · {time} · {filled}/{event.capacity}
+          </span>
+        </span>
+        <span className={`size-2.5 shrink-0 rounded-full bg-gradient-to-b ${statusDot[getStatus(filled, event.capacity)]}`} />
+      </button>
+    );
   }
 
   return (
@@ -230,15 +259,24 @@ export function CalendarBoard({
                   <div
                     key={`${weekIndex}-${dayIndex}`}
                     onClick={
-                      canCreate && cell.iso
-                        ? () => openDialog({ mode: "create", date: cell.iso! })
+                      cell.iso
+                        ? () => {
+                            const iso = cell.iso!;
+                            if (window.matchMedia("(min-width: 640px)").matches) {
+                              if (canCreate) openDialog({ mode: "create", date: iso });
+                              return;
+                            }
+                            setSelectedIso((current) => (current === iso ? null : iso));
+                          }
                         : undefined
                     }
                     className={`group relative min-h-[64px] p-1 sm:min-h-[190px] sm:p-2 ${
                       dayIndex !== 6 ? `border-r-[0.5px] ${gridLine}` : ""
                     } ${weekIndex !== weeks.length - 1 ? `border-b-[0.5px] ${gridLine}` : ""} ${
                       cell.weekend ? "bg-[#e5f0ef] dark:bg-[#1e3934]" : "bg-surface"
-                    } ${cell.muted ? "opacity-40" : canCreate ? "cursor-pointer" : ""}`}
+                    } ${cell.muted ? "opacity-40" : canCreate ? "cursor-pointer" : cell.iso ? "cursor-pointer sm:cursor-auto" : ""} ${
+                      cell.iso && cell.iso === selectedDay ? "ring-2 ring-inset ring-brand dark:ring-lime-from sm:ring-0" : ""
+                    }`}
                   >
                     <span
                       aria-current={isToday ? "date" : undefined}
@@ -327,33 +365,42 @@ export function CalendarBoard({
           </div>
         </div>
 
-        {events.length > 0 && (
-          <div className="mt-4 flex flex-col gap-2 sm:hidden">
-            {[...events]
-              .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())
-              .map((event) => {
-                const { date, weekday, time } = formatEventSchedule(event.startsAt);
-                const filled = event.filled ?? 0;
-                return (
-                  <button
-                    key={event.id}
-                    type="button"
-                    onClick={() => openDialog({ mode: "view", event })}
-                    className="flex items-center gap-3 rounded-[10px] border border-brand/[0.17] px-3 py-2.5 text-left active:bg-brand/5 dark:border-white/10"
-                  >
-                    <span className="w-14 shrink-0 font-display text-lg font-bold leading-tight text-ink">{date}</span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold text-ink">{event.title}</span>
-                      <span className="block text-xs text-ink/70">
-                        {weekday} · {time} · {filled}/{event.capacity}
-                      </span>
-                    </span>
-                    <span className={`size-2.5 shrink-0 rounded-full bg-gradient-to-b ${statusDot[getStatus(filled, event.capacity)]}`} />
-                  </button>
-                );
-              })}
-          </div>
-        )}
+        <div className="mt-4 flex flex-col gap-2 sm:hidden">
+          {selectedDay ? (
+            <>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-ink">
+                  Cultos de {formatEventSchedule(new Date(`${selectedDay}T00:00:00Z`)).weekday},{" "}
+                  {formatEventSchedule(new Date(`${selectedDay}T00:00:00Z`)).date}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSelectedIso(null)}
+                  className="text-sm font-semibold text-brand underline-offset-4 hover:underline dark:text-lime-from"
+                >
+                  Ver o mês todo
+                </button>
+              </div>
+              {selectedEvents.length === 0 && <p className="text-sm text-ink/60">Nenhum culto neste dia.</p>}
+              {selectedEvents.map(renderEventRow)}
+              {!readOnly && (
+                <button
+                  type="button"
+                  onClick={() => openDialog({ mode: "create", date: selectedDay })}
+                  className="flex items-center justify-center gap-2 rounded-[10px] border border-dashed border-brand/50 px-3 py-2.5 text-sm font-semibold text-brand active:bg-brand/5 dark:border-lime-from/50 dark:text-lime-from"
+                >
+                  <Plus size={16} />
+                  Novo evento neste dia
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              {sortedEvents.length > 0 && <p className="text-sm font-semibold text-ink">Toque em um dia para ver os cultos dele</p>}
+              {sortedEvents.map(renderEventRow)}
+            </>
+          )}
+        </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-ink/55">
           {statusLegend.map(({ status, label }) => (
