@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { Eye } from "lucide-react";
+import { useState, useTransition } from "react";
+import { Eye, Trash2 } from "lucide-react";
 import { formatEventSchedule } from "@/lib/event-schedule";
 import { EventViewDialog } from "./event-view-dialog";
+import { ConfirmDialog } from "./confirm-dialog";
+import { deleteArchivedEventAction } from "@/app/dashboard/eventos/novo/actions";
 import type { EventRecord } from "./event-management";
 
 export interface ArchivedEvent extends EventRecord {
@@ -30,6 +32,23 @@ const rowClass =
 /** Archived events: a short row each, with a read-only details dialog (no editing, no schedule). */
 export function ArchivedEventList({ events }: { events: ArchivedEvent[] }) {
   const [selected, setSelected] = useState<ArchivedEvent | null>(null);
+  const [deleting, setDeleting] = useState<ArchivedEvent | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isDeleting, startDelete] = useTransition();
+
+  function confirmDelete() {
+    if (!deleting) return;
+    const { id } = deleting;
+    setDeleteError(null);
+    startDelete(async () => {
+      const result = await deleteArchivedEventAction(id);
+      if (result?.error) {
+        setDeleteError(result.error);
+        return;
+      }
+      setDeleting(null);
+    });
+  }
 
   return (
     <>
@@ -48,6 +67,18 @@ export function ArchivedEventList({ events }: { events: ArchivedEvent[] }) {
             <ExpiryPill days={event.daysLeft} />
             <button
               type="button"
+              onClick={() => {
+                setDeleteError(null);
+                setDeleting(event);
+              }}
+              title="Excluir definitivamente"
+              aria-label={`Excluir ${event.title} definitivamente`}
+              className="flex size-9 shrink-0 items-center justify-center rounded-full border border-danger-from text-danger-text transition duration-150 ease-out hover:scale-110 hover:bg-danger-from/10 active:scale-95"
+            >
+              <Trash2 size={17} strokeWidth={2.5} />
+            </button>
+            <button
+              type="button"
               onClick={() => setSelected(event)}
               title="Ver detalhes"
               aria-label={`Ver detalhes de ${event.title}`}
@@ -60,6 +91,19 @@ export function ArchivedEventList({ events }: { events: ArchivedEvent[] }) {
       })}
 
       {selected && <EventViewDialog event={selected} onClose={() => setSelected(null)} />}
+
+      {deleting && (
+        <ConfirmDialog
+          title="Excluir definitivamente?"
+          description={`"${deleting.title}" será apagado para sempre, junto com as inscrições e a escala. Os serviços dos voluntários continuam contando no ranking.`}
+          confirmLabel="Excluir"
+          loadingLabel="Excluindo..."
+          isLoading={isDeleting}
+          error={deleteError}
+          onCancel={() => setDeleting(null)}
+          onConfirm={confirmDelete}
+        />
+      )}
     </>
   );
 }

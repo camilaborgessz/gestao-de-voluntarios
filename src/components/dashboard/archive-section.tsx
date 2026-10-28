@@ -1,25 +1,5 @@
-import { formatShortDate } from "@/lib/event-schedule";
 import { ArchivedEventList, type ArchivedEvent } from "./archived-event-list";
-
-export interface ArchivedNotice {
-  id: string;
-  message: string;
-  visibleUntil: Date;
-  daysLeft: number;
-}
-
-function ExpiryPill({ days }: { days: number }) {
-  const soon = days <= 3;
-  return (
-    <span
-      className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${
-        soon ? "bg-warning-from/30 text-ink" : "bg-brand/10 text-brand dark:bg-white/10 dark:text-lime-from"
-      }`}
-    >
-      {days <= 1 ? "Some em breve" : `Some em ${days} dias`}
-    </span>
-  );
-}
+import { ArchivedNoticeList, type ArchivedNotice } from "./archived-notice-list";
 
 function SectionCard({ title, count, children }: { title: string; count: number; children: React.ReactNode }) {
   return (
@@ -37,11 +17,8 @@ function SectionCard({ title, count, children }: { title: string; count: number;
   );
 }
 
-const rowClass =
-  "flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[10px] border border-brand/[0.17] bg-surface px-4 py-3 dark:border-white/10 dark:bg-surface-raised";
-
-/** Read-only archive of past events and notices, shown in the "Arquivados" tab of the admin management page. */
-export type { ArchivedEvent };
+/** Archive of past events and notices, shown in the "Arquivados" tab of the admin management page. */
+export type { ArchivedEvent, ArchivedNotice };
 
 export function ArchiveSection({ events, notices }: { events: ArchivedEvent[]; notices: ArchivedNotice[] }) {
   return (
@@ -53,17 +30,7 @@ export function ArchiveSection({ events, notices }: { events: ArchivedEvent[]; n
 
       <SectionCard title="Avisos" count={notices.length}>
         {notices.length === 0 && <p className="text-sm text-ink/60">Nenhum aviso arquivado</p>}
-        {notices.map((notice) => (
-          <div key={notice.id} className={rowClass}>
-            <div className="w-20 shrink-0 text-center">
-              <p className="text-xs text-ink/60">até</p>
-              <p className="font-display text-lg font-bold leading-tight text-ink">{formatShortDate(notice.visibleUntil)}</p>
-            </div>
-            <div className="hidden h-10 w-0.5 shrink-0 rounded-full bg-brand/60 sm:block dark:bg-white/15" />
-            <p className="line-clamp-2 min-w-0 flex-1 basis-36 text-sm text-ink">{notice.message}</p>
-            <ExpiryPill days={notice.daysLeft} />
-          </div>
-        ))}
+        <ArchivedNoticeList notices={notices} />
       </SectionCard>
     </div>
   );

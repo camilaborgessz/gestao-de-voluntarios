@@ -26,7 +26,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { saveSchedule } from "@/app/dashboard/escala/[id]/actions";
+import { notifyEntrances, saveSchedule } from "@/app/dashboard/escala/[id]/actions";
 import { DEFAULT_SCHEDULE_TITLE, NEW_SLOT_PREFIX } from "@/lib/schedule-defaults";
 import { describeEventDate, personChipText, renderScheduleImage, type ScheduleImageData } from "@/lib/schedule-image";
 import { Modal } from "./modal";
@@ -191,6 +191,7 @@ export function ScheduleBoard({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [canShareImage, setCanShareImage] = useState(false);
+  const [notifiedCount, setNotifiedCount] = useState(0);
 
   const { weekdayLong, dateFull, time } = describeEventDate(startsAt);
 
@@ -467,9 +468,24 @@ export function ScheduleBoard({
   // ---- image + WhatsApp -------------------------------------------------------------------
   const fileName = `escala-${dateFull.replaceAll("/", "-")}.png`;
 
+  /** Makes sure every edit is saved before the volunteers are told where they were placed. */
+  async function settleSave() {
+    if (hasUnsaved.current && !inFlight.current) void runSaveRef.current();
+    for (let waited = 0; waited < 10_000 && (inFlight.current || queued.current || hasUnsaved.current); waited += 100) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    return !hasUnsaved.current && !inFlight.current;
+  }
+
   async function generate() {
     setIsGenerating(true);
+    setNotifiedCount(0);
     try {
+      // The volunteers see (in the bell) the entrance saved for them; announce what changed since last time.
+      if (await settleSave()) {
+        const told = await notifyEntrances(eventId);
+        if (told.ok) setNotifiedCount(told.notified);
+      }
       const data: ScheduleImageData = {
         heading: heading.trim() || DEFAULT_SCHEDULE_TITLE,
         weekdayLong,
@@ -747,6 +763,13 @@ export function ScheduleBoard({
               Baixar imagem
             </button>
           </div>
+
+          {notifiedCount > 0 && (
+            <p role="status" className="flex items-center gap-2 rounded-[10px] bg-success-from/20 px-4 py-3 text-sm font-medium text-ink">
+              <Check size={18} strokeWidth={3} className="shrink-0 text-success-text" />
+              {notifiedCount === 1 ? "1 voluntário avisado" : `${notifiedCount} voluntários avisados`} da entrada no sininho.
+            </p>
+          )}
 
           {pool.length > 0 && (
             <p className="rounded-[8px] bg-warning-from/20 px-3 py-2 text-sm text-ink">

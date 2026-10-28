@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { adminActionError } from "@/lib/auth-guards";
+import { describeEventDate } from "@/lib/schedule-image";
 
 const scheduleSchema = z.object({
   heading: z.string().max(80),
@@ -101,5 +102,54 @@ export async function saveSchedule(eventId: string, input: ScheduleInput): Promi
       return { ok: false, error: "Evento não encontrado" };
     }
     return { ok: false, error: "Não foi possível salvar a escala. Tente novamente." };
+  }
+}
+
+export type NotifyEntrancesResult = { ok: true; notified: number } | { ok: false; error: string };
+
+/**
+ * Tells the volunteers (bell) which entrance they were placed in, using what is saved right now.
+ * Only people whose entrance is new, changed or removed since the last time are notified, so pressing
+ * "Gerar escala" again does not repeat anything.
+ */
+export async function notifyEntrances(eventId: string): Promise<NotifyEntrancesResult> {
+  const denied = await adminActionError();
+  if (denied) return { ok: false, error: denied };
+
+  try {
+    const event = await prisma.event.findUnique({ where: { id: eventId }, select: { title: true, startsAt: true } });
+    if (!event) return { ok: false, error: "Evento não encontrado" };
+
+    const enrollments = await prisma.enrollment.findMany({
+      where: { eventId, status: "CONFIRMED" },
+      select: { id: true, userId: true, notifiedEntry: true, slot: { select: { label: true, location: true } } },
+    });
+
+    const { weekdayLong, dateFull, time } = describeEventDate(event.startsAt);
+    const when = `${event.title}, ${weekdayLong}, ${dateFull} às ${time}.`;
+    let notified = 0;
+
+    for (const enrollment of enrollments) {
+      const entry = enrollment.slot
+        ? enrollment.slot.location
+          ? `${enrollment.slot.label} — ${enrollment.slot.location}`
+          : enrollment.slot.label
+        : null;
+      if (entry === enrollment.notifiedEntry) continue;
+
+      const notice = entry
+        ? { title: `${enrollment.notifiedEntry ? "Sua entrada mudou" : "Sua entrada"}: ${entry}`, message: when }
+        : { title: "Você saiu da escala", message: `${when} O líder vai definir uma nova entrada para você.` };
+
+      await prisma.notification.create({
+        data: { userId: enrollment.userId, eventId, kind: "ENTRY_ASSIGNED", ...notice },
+      });
+      await prisma.enrollment.update({ where: { id: enrollment.id }, data: { notifiedEntry: entry } });
+      notified++;
+    }
+
+    return { ok: true, notified };
+  } catch {
+    return { ok: false, error: "Não foi possível avisar os voluntários." };
   }
 }

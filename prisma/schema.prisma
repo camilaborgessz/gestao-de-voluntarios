@@ -25,6 +25,7 @@ enum NotificationKind {
   REMINDER_12H
   PASSWORD_RESET_REQUEST
   VOLUNTEER_JOINED
+  ENTRY_ASSIGNED
 }
 
 enum DeliveryStatus {
@@ -123,6 +124,8 @@ model Enrollment {
   slotId     String?
   position   Int              @default(0)
   remind24At DateTime?
+  /// The entrance (entrada) the volunteer was last told about, so changes are announced only once
+  notifiedEntry String?
   slot       EventSlot?       @relation(fields: [slotId], references: [id], onDelete: SetNull)
   status     EnrollmentStatus @default(PENDING)
   helpMode   HelpMode         @default(INDIVIDUAL)

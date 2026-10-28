@@ -27,28 +27,35 @@ export function noticeArchiveDaysLeft(visibleUntil: Date, now = wallClockNow()) 
 }
 
 /**
- * Permanently removes archived events/notices older than `ARCHIVE_DAYS` days.
- * Before an event disappears, each confirmed volunteer gets +1 in `servicesDone`, so the "mais assíduos"
- * ranking does not reset every month. Only the run that actually deletes the event counts it.
+ * Permanently removes one past event. Each confirmed volunteer gets +1 in `servicesDone` first, so the
+ * "mais assíduos" ranking keeps the service. Only the call that actually deletes the event counts it
+ * (two requests at once cannot count it twice). Returns false when the event was already gone.
  */
+export async function deleteArchivedEvent(id: string) {
+  const event = await prisma.event.findUnique({
+    where: { id },
+    select: { enrollments: { where: { status: "CONFIRMED" }, select: { userId: true } } },
+  });
+  if (!event) return false;
+
+  const { count } = await prisma.event.deleteMany({ where: { id } });
+  if (count === 0) return false;
+  await Promise.all(
+    event.enrollments.map(({ userId }) =>
+      prisma.user.updateMany({ where: { id: userId }, data: { servicesDone: { increment: 1 } } }),
+    ),
+  );
+  return true;
+}
+
+/** Permanently removes archived events/notices older than `ARCHIVE_DAYS` days. */
 export async function purgeExpiredArchive() {
   const now = wallClockNow();
   const eventCutoff = new Date(startOfTodayWallClock(now).getTime() - ARCHIVE_DAYS * DAY_MS);
   const noticeCutoff = new Date(now.getTime() - ARCHIVE_DAYS * DAY_MS);
 
-  const expired = await prisma.event.findMany({
-    where: { startsAt: { lt: eventCutoff } },
-    select: { id: true, enrollments: { where: { status: "CONFIRMED" }, select: { userId: true } } },
-  });
-  for (const event of expired) {
-    const { count } = await prisma.event.deleteMany({ where: { id: event.id } });
-    if (count === 0) continue; // another request already removed (and counted) it
-    await Promise.all(
-      event.enrollments.map(({ userId }) =>
-        prisma.user.updateMany({ where: { id: userId }, data: { servicesDone: { increment: 1 } } }),
-      ),
-    );
-  }
+  const expired = await prisma.event.findMany({ where: { startsAt: { lt: eventCutoff } }, select: { id: true } });
+  for (const { id } of expired) await deleteArchivedEvent(id);
 
   await prisma.notice.deleteMany({ where: { visibleUntil: { lt: noticeCutoff } } });
 }

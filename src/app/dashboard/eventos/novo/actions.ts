@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { adminActionError } from "@/lib/auth-guards";
+import { deleteArchivedEvent, startOfTodayWallClock } from "@/lib/archive";
 import { wallClockToDate } from "@/lib/event-schedule";
 
 // Every action below is admin-only (volunteers can only view events and join them).
@@ -239,6 +240,24 @@ export async function deleteNotice(id: string): Promise<{ error?: string } | und
     await prisma.notice.delete({ where: { id } });
   } catch {
     return { error: "Não foi possível excluir o aviso. Tente novamente." };
+  }
+  revalidatePath("/dashboard/eventos/novo");
+  revalidatePath("/dashboard");
+}
+
+/** "Arquivados": deletes a past event for good. Events that have not happened yet are refused. */
+export async function deleteArchivedEventAction(id: string): Promise<{ error?: string } | undefined> {
+  const denied = await adminActionError();
+  if (denied) return { error: denied };
+
+  try {
+    const event = await prisma.event.findUnique({ where: { id }, select: { startsAt: true } });
+    if (event && event.startsAt >= startOfTodayWallClock()) {
+      return { error: "Só eventos já arquivados podem ser excluídos aqui." };
+    }
+    await deleteArchivedEvent(id);
+  } catch {
+    return { error: "Não foi possível excluir o evento. Tente novamente." };
   }
   revalidatePath("/dashboard/eventos/novo");
   revalidatePath("/dashboard");
