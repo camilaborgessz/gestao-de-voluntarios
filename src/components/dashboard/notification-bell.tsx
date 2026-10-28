@@ -24,7 +24,7 @@ function timeAgo(iso: string) {
   return relativeTime.format(Math.round(hours / 24), "day");
 }
 
-/** Bell in the top bar: unread badge + the last 7 days of notifications. */
+/** Bell in the top bar: unread badge + recent notifications, with a button to clear them all. */
 export function NotificationBell() {
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [unread, setUnread] = useState(0);
@@ -75,6 +75,21 @@ export function NotificationBell() {
     };
   }, [open]);
 
+  async function clearAll() {
+    setItems([]);
+    setUnread(0);
+    setHighlighted(new Set());
+    try {
+      await fetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "clear-all" }),
+      });
+    } catch {
+      void load();
+    }
+  }
+
   async function toggle() {
     if (open) {
       setOpen(false);
@@ -121,8 +136,17 @@ export function NotificationBell() {
           aria-label="Notificações"
           className="fixed inset-x-4 top-[4.5rem] z-50 overflow-hidden md:absolute md:inset-x-auto md:right-0 md:top-full md:mt-2 md:w-[22rem] rounded-[14px] border border-brand/15 bg-surface shadow-[0_12px_36px_rgba(0,0,0,0.2)] dark:border-white/10 dark:bg-surface-raised"
         >
-          <div className="border-b border-brand/10 px-4 py-3 dark:border-white/10">
+          <div className="flex items-center justify-between gap-3 border-b border-brand/10 px-4 py-3 dark:border-white/10">
             <p className="text-base font-semibold text-ink">Notificações</p>
+            {items.length > 0 && (
+              <button
+                type="button"
+                onClick={() => void clearAll()}
+                className="text-sm font-semibold text-brand underline-offset-4 transition-colors hover:underline dark:text-lime-from"
+              >
+                Limpar tudo
+              </button>
+            )}
           </div>
 
           <div className="max-h-[60dvh] overflow-y-auto md:max-h-[22rem]">

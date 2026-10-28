@@ -2,8 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { wallClockNow } from "@/lib/event-schedule";
 import { describeEventDate } from "@/lib/schedule-image";
 
-/** In-app notifications are deleted this many days after being created. */
+/** In-app notifications are deleted this many days after being created... */
 export const NOTIFICATION_TTL_DAYS = 7;
+/** ...or this many days after the person read them, whichever comes first. */
+export const READ_NOTIFICATION_TTL_DAYS = 3;
 
 const HOUR_MS = 3_600_000;
 const DAY_MS = 24 * HOUR_MS;
@@ -20,10 +22,15 @@ export function initialReminderMarks(startsAt: Date, now = wallClockNow()) {
   return { remind24At: passed ? new Date() : null };
 }
 
-/** Deletes notifications older than `NOTIFICATION_TTL_DAYS` days. Returns how many were removed. */
+/** Deletes old notifications (unread ones after 7 days, read ones after 3). Returns how many were removed. */
 export async function purgeExpiredNotifications() {
   const { count } = await prisma.notification.deleteMany({
-    where: { createdAt: { lt: new Date(Date.now() - NOTIFICATION_TTL_DAYS * DAY_MS) } },
+    where: {
+      OR: [
+        { createdAt: { lt: new Date(Date.now() - NOTIFICATION_TTL_DAYS * DAY_MS) } },
+        { readAt: { lt: new Date(Date.now() - READ_NOTIFICATION_TTL_DAYS * DAY_MS) } },
+      ],
+    },
   });
   return count;
 }
