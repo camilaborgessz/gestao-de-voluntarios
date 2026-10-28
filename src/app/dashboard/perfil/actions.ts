@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { spouseKey } from "@/lib/spouse-key";
 import { MIN_PASSWORD_LENGTH, passwordProblem } from "@/lib/password-tokens";
 
 const profileSchema = z.object({
@@ -49,6 +50,8 @@ export async function updateProfile(_prevState: ActionState, formData: FormData)
     return { error: "Já existe um usuário com esse email" };
   }
 
+  const before = await prisma.user.findUnique({ where: { id: session.user.id }, select: { spouseName: true } });
+
   await prisma.user.update({
     where: { id: session.user.id },
     data: {
@@ -61,8 +64,35 @@ export async function updateProfile(_prevState: ActionState, formData: FormData)
     },
   });
 
+  // A new spouse name replaces the old one everywhere: past and future signups, the ranking, the schedules.
+  const newSpouse = helpMode === "COUPLE" ? spouseName?.trim() : "";
+  if (newSpouse && newSpouse !== before?.spouseName) {
+    await applySpouseName(session.user.id, newSpouse);
+  }
+
   revalidatePath("/dashboard/perfil");
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/agenda");
   return { success: true };
+}
+
+/**
+ * Makes every trace of this volunteer's spouse carry the new name: the couple signups (also past ones, which
+ * feed the "mais assíduos" ranking) and the services already kept from archived events.
+ */
+async function applySpouseName(userId: string, name: string) {
+  await prisma.enrollment.updateMany({ where: { userId, helpMode: "COUPLE" }, data: { spouseName: name } });
+
+  const stored = await prisma.spouseService.findMany({ where: { userId } });
+  if (stored.length === 0) return;
+  const key = spouseKey(name);
+  const total = stored.reduce((sum, row) => sum + row.count, 0);
+  await prisma.spouseService.upsert({
+    where: { userId_key: { userId, key } },
+    create: { userId, key, name, count: total },
+    update: { count: total, name },
+  });
+  await prisma.spouseService.deleteMany({ where: { userId, key: { not: key } } });
 }
 
 export async function changePassword(_prevState: ActionState, formData: FormData): Promise<ActionState> {
