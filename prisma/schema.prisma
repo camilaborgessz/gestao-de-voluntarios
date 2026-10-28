@@ -64,6 +64,7 @@ model User {
   enrollments  Enrollment[]
   notifications Notification[]
   passwordTokens PasswordToken[]
+  spouseServices SpouseService[]
 
   @@index([role])
 }
@@ -175,4 +176,17 @@ model PasswordToken {
   createdAt DateTime             @default(now())
 
   @@index([userId])
+}
+
+/// Services a spouse did together with a volunteer, kept after the events are purged from the archive.
+/// The spouse has no account: he is identified by the volunteer plus his normalized name.
+model SpouseService {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key    String
+  name   String
+  count  Int    @default(0)
+
+  @@unique([userId, key])
 }

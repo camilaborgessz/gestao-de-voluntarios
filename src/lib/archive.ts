@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { wallClockNow } from "@/lib/event-schedule";
+import { spouseKey } from "@/lib/spouse-key";
 
 /** Past events and notices stay in the admin archive for this many days, then are deleted. */
 export const ARCHIVE_DAYS = 30;
@@ -34,16 +35,26 @@ export function noticeArchiveDaysLeft(visibleUntil: Date, now = wallClockNow()) 
 export async function deleteArchivedEvent(id: string) {
   const event = await prisma.event.findUnique({
     where: { id },
-    select: { enrollments: { where: { status: "CONFIRMED" }, select: { userId: true } } },
+    select: { enrollments: { where: { status: "CONFIRMED" }, select: { userId: true, helpMode: true, spouseName: true } } },
   });
   if (!event) return false;
 
   const { count } = await prisma.event.deleteMany({ where: { id } });
   if (count === 0) return false;
   await Promise.all(
-    event.enrollments.map(({ userId }) =>
-      prisma.user.updateMany({ where: { id: userId }, data: { servicesDone: { increment: 1 } } }),
-    ),
+    event.enrollments.map(async ({ userId, helpMode, spouseName }) => {
+      await prisma.user.updateMany({ where: { id: userId }, data: { servicesDone: { increment: 1 } } });
+      // Signed up as a couple: the spouse served too.
+      const name = spouseName?.trim();
+      if (helpMode === "COUPLE" && name) {
+        const key = spouseKey(name);
+        await prisma.spouseService.upsert({
+          where: { userId_key: { userId, key } },
+          create: { userId, key, name, count: 1 },
+          update: { count: { increment: 1 }, name },
+        });
+      }
+    }),
   );
   return true;
 }
