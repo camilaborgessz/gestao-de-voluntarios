@@ -333,24 +333,28 @@ export async function renderScheduleImage(data: ScheduleImageData): Promise<Blob
   // ---------- note ----------
   let cursor = headerH + 32;
   if (noteH) {
+    // Dark teal block (like the verse card in the app): clearly different from the white entry cards.
     ctx.save();
-    ctx.shadowColor = "rgba(2, 87, 92, 0.14)";
-    ctx.shadowBlur = 26;
-    ctx.shadowOffsetY = 8;
-    ctx.fillStyle = C.white;
+    ctx.shadowColor = "rgba(2, 87, 92, 0.28)";
+    ctx.shadowBlur = 30;
+    ctx.shadowOffsetY = 10;
+    const fill = ctx.createLinearGradient(M, cursor, M + innerW, cursor + noteH);
+    fill.addColorStop(0, C.brand);
+    fill.addColorStop(1, C.brandDark);
+    ctx.fillStyle = fill;
     roundRect(ctx, M, cursor, innerW, noteH, 26);
     ctx.fill();
     ctx.restore();
 
-    // accent bar, same as the entry cards
-    ctx.fillStyle = C.brand;
+    // lime accent bar
+    ctx.fillStyle = C.limeFrom;
     roundRect(ctx, M, cursor + 22, 8, 40, [0, 4, 4, 0]);
     ctx.fill();
 
-    ctx.fillStyle = C.brand;
-    ctx.font = f(700, 20);
+    ctx.fillStyle = C.limeFrom;
+    ctx.font = f(700, 22);
     ctx.fillText("AVISO", M + 34, cursor + 24 + 12);
-    ctx.fillStyle = C.brandDark;
+    ctx.fillStyle = C.white;
     ctx.font = f(600, 24);
     noteLines.forEach((line, index) => ctx.fillText(line, M + 34, cursor + 24 + 30 + 17 + index * 34));
     cursor += noteH + 24;
