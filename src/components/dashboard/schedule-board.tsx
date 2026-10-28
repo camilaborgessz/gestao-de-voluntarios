@@ -767,7 +767,7 @@ export function ScheduleBoard({
           {notifiedCount > 0 && (
             <p role="status" className="flex items-center gap-2 rounded-[10px] bg-success-from/20 px-4 py-3 text-sm font-medium text-ink">
               <Check size={18} strokeWidth={3} className="shrink-0 text-success-text" />
-              {notifiedCount === 1 ? "1 voluntário avisado" : `${notifiedCount} voluntários avisados`} da entrada no sininho.
+              {notifiedCount === 1 ? "1 voluntário notificado." : `${notifiedCount} voluntários notificados.`}
             </p>
           )}
 
