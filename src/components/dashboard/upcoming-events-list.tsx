@@ -138,6 +138,7 @@ export function UpcomingEventsList({
             tags={event.dressCode}
             filled={event.filled ?? 0}
             capacity={event.capacity}
+            entry={event.joined ? event.myEntry : null}
             isAdmin={!readOnly}
             participation={
               readOnly ? (

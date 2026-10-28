@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { Plus } from "lucide-react";
-import type { EventScheduleView } from "@/lib/event-schedule-view";
 import { EventManageRow } from "./event-manage-row";
 import { EventFormDialog } from "./event-form-dialog";
 import { EventViewDialog } from "./event-view-dialog";
@@ -21,8 +20,8 @@ export interface EventRecord {
   note?: string | null;
   /** Heading of the schedule image (defaults to the church's standard title). */
   scheduleTitle?: string | null;
-  /** Volunteer view: the schedule (escala) the leader already put together. */
-  schedule?: EventScheduleView[];
+  /** Volunteer view: the entrance (entrada) the leader placed him in, null when not placed yet. */
+  myEntry?: string | null;
   /** Volunteer view: whether the signed-in volunteer already took a spot. */
   joined?: boolean;
   /** How the volunteer signed up for this event (alone or with spouse). */

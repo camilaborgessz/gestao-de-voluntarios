@@ -17,7 +17,6 @@ import {
 import { after } from "next/server";
 import { purgeExpiredArchive } from "@/lib/archive";
 import { purgeExpiredNotifications } from "@/lib/notifications";
-import { scheduleSlotsArgs, toScheduleView } from "@/lib/event-schedule-view";
 import { getVerseOfTheDay } from "@/lib/verse-of-the-day";
 import { formatShortDate, wallClockNow } from "@/lib/event-schedule";
 
@@ -45,8 +44,10 @@ export default async function DashboardPage() {
       orderBy: { startsAt: "asc" },
       take: isVolunteer ? 50 : 8,
       include: {
-        slots: scheduleSlotsArgs,
-        enrollments: { where: { status: "CONFIRMED" }, select: { userId: true, helpMode: true } },
+        enrollments: {
+          where: { status: "CONFIRMED" },
+          select: { userId: true, helpMode: true, slot: { select: { label: true, location: true } } },
+        },
       },
     }),
     prisma.event.count({ where: { startsAt: { gte: startOfToday } } }),
@@ -67,7 +68,12 @@ export default async function DashboardPage() {
     dressCode: event.dressCode,
     note: event.note,
     scheduleTitle: event.scheduleTitle,
-    schedule: isVolunteer ? toScheduleView(event.slots) : undefined,
+    myEntry: (() => {
+      if (!isVolunteer) return undefined;
+      const slot = event.enrollments.find((e) => e.userId === userId)?.slot;
+      if (!slot) return null;
+      return slot.location ? `${slot.label} — ${slot.location}` : slot.label;
+    })(),
     filled: seatsTaken(event.enrollments),
     joined: event.enrollments.some((e) => e.userId === userId),
     joinedMode: event.enrollments.find((e) => e.userId === userId)?.helpMode,

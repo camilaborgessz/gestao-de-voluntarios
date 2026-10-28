@@ -12,6 +12,8 @@ export interface EventCardProps {
   filled: number;
   capacity: number;
   isAdmin?: boolean;
+  /** Volunteer view: the entrance he was placed in, shown under the title. */
+  entry?: string | null;
   /** Volunteer view: replaces the admin action row (participate / cancel button). */
   participation?: ReactNode;
   onView?: () => void;
@@ -53,6 +55,7 @@ export function EventCard({
   tags,
   filled,
   capacity,
+  entry,
   isAdmin = false,
   participation,
   onView,
@@ -76,6 +79,7 @@ export function EventCard({
 
       <div className="flex-1">
         <p className="text-lg font-medium text-ink lg:text-xl">{title}</p>
+        {entry && <p className="mt-1 text-sm font-semibold text-brand dark:text-lime-from">Sua entrada: {entry}</p>}
         <div className="mt-2 flex flex-wrap gap-2">
           {tags.map((tag) => (
             <span

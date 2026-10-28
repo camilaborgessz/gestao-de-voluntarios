@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { seatsTaken } from "@/lib/seats";
 import { auth } from "@/auth";
-import { scheduleSlotsArgs, toScheduleView } from "@/lib/event-schedule-view";
 import { CalendarBoard, type CalendarDayCell } from "@/components/dashboard/calendar-board";
 import type { EventRecord } from "@/components/dashboard/event-management";
 import { buildMonthGrid, toDateInputValue, currentYearMonth } from "@/lib/event-schedule";
@@ -39,8 +38,10 @@ export default async function AgendaPage({
       where: { startsAt: { gte: monthStart, lt: monthEnd } },
       orderBy: { startsAt: "asc" },
       include: {
-        slots: scheduleSlotsArgs,
-        enrollments: { where: { status: "CONFIRMED" }, select: { userId: true, helpMode: true } },
+        enrollments: {
+          where: { status: "CONFIRMED" },
+          select: { userId: true, helpMode: true, slot: { select: { label: true, location: true } } },
+        },
       },
     }),
     prisma.uniform.findMany({ orderBy: { name: "asc" } }),
@@ -54,7 +55,12 @@ export default async function AgendaPage({
     dressCode: event.dressCode,
     note: event.note,
     scheduleTitle: event.scheduleTitle,
-    schedule: isVolunteer ? toScheduleView(event.slots) : undefined,
+    myEntry: (() => {
+      if (!isVolunteer) return undefined;
+      const slot = event.enrollments.find((e) => e.userId === session?.user?.id)?.slot;
+      if (!slot) return null;
+      return slot.location ? `${slot.label} — ${slot.location}` : slot.label;
+    })(),
     filled: seatsTaken(event.enrollments),
     joined: event.enrollments.some((e) => e.userId === session?.user?.id),
     joinedMode: event.enrollments.find((e) => e.userId === session?.user?.id)?.helpMode,

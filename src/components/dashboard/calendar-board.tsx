@@ -396,7 +396,6 @@ export function CalendarBoard({
             </>
           ) : (
             <>
-              {sortedEvents.length > 0 && <p className="text-sm font-semibold text-ink">Toque em um dia para ver os cultos dele</p>}
               {sortedEvents.map(renderEventRow)}
             </>
           )}

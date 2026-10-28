@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { Check, Loader2, User, Users, X } from "lucide-react";
+import { ConfirmDialog } from "./confirm-dialog";
 import { joinEvent, leaveEvent } from "@/app/dashboard/participar/actions";
 
 type Mode = "INDIVIDUAL" | "COUPLE";
@@ -66,9 +68,10 @@ export function ParticipateButton({
   }
 
   function leave() {
+    setConfirmLeave(false);
     run(
       () => leaveEvent(eventId),
-      () => setConfirmLeave(false),
+      () => undefined,
       () => onOptimistic?.(false, "INDIVIDUAL"),
     );
   }
@@ -82,31 +85,7 @@ export function ParticipateButton({
   let content: React.ReactNode;
 
   if (joined) {
-    content = confirmLeave ? (
-      <div className="flex h-9 items-center gap-1.5 rounded-full border border-danger-to/40 pl-3 pr-1">
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">Cancelar?</span>
-        <button
-          type="button"
-          onClick={leave}
-          disabled={isPending}
-          title="Confirmar cancelamento"
-          aria-label="Confirmar cancelamento"
-          className={`${chipButton} bg-danger-to text-white`}
-        >
-          {isPending ? <Loader2 size={14} className="animate-spin" /> : <Check size={16} strokeWidth={3} />}
-        </button>
-        <button
-          type="button"
-          onClick={() => setConfirmLeave(false)}
-          disabled={isPending}
-          title="Manter participação"
-          aria-label="Manter participação"
-          className={`${chipButton} bg-ink/10 text-ink hover:bg-ink/20`}
-        >
-          <X size={16} />
-        </button>
-      </div>
-    ) : (
+    content = (
       <div className="flex h-9 items-center rounded-full bg-gradient-to-r from-success-from to-success-to pl-3 pr-1 text-white shadow-sm">
         <span
           title={joinedMode === "COUPLE" ? "Participando com cônjuge" : undefined}
@@ -207,6 +186,20 @@ export function ParticipateButton({
           {error}
         </p>
       )}
+      {confirmLeave &&
+        createPortal(
+          <ConfirmDialog
+            title="Cancelar participação?"
+            description="Você deixará de participar deste evento. Se mudar de ideia, é só participar de novo."
+            confirmLabel="Cancelar participação"
+            cancelLabel="Manter participação"
+            tone="danger"
+            isLoading={false}
+            onCancel={() => setConfirmLeave(false)}
+            onConfirm={leave}
+          />,
+          document.body,
+        )}
     </div>
   );
 }
