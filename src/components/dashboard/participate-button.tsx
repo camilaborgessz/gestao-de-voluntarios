@@ -112,7 +112,7 @@ export function ParticipateButton({
             type="button"
             disabled={isPending}
             onClick={() => join("INDIVIDUAL")}
-            className={`${pill} min-w-0 flex-1 border border-brand bg-brand/10 text-brand hover:bg-brand/20 dark:text-lime-from`}
+            className={`${pill} min-w-0 flex-1 border border-brand bg-brand/10 text-brand hover:bg-brand/20 dark:border-lime-from/60 dark:bg-white/10 dark:text-lime-from dark:hover:bg-white/20`}
           >
             <User size={15} className="shrink-0" />
             Só eu
@@ -130,12 +130,13 @@ export function ParticipateButton({
         <button
           type="button"
           disabled={isPending}
-          onClick={() => setAskSpouse(true)}
+          // The spouse's name is already in the profile: no need to type it again.
+          onClick={() => (spouseName.trim() ? join("COUPLE") : setAskSpouse(true))}
           className={`${pill} w-full bg-gradient-to-r from-brand to-brand-dark dark:bg-none dark:bg-lime-from dark:text-brand text-white ${
             askSpouse ? "ring-2 ring-lime-to ring-offset-2 ring-offset-surface" : ""
           }`}
         >
-          <Users size={15} className="shrink-0" />
+          {isPending && spouseName.trim() ? <Loader2 size={15} className="shrink-0 animate-spin" /> : <Users size={15} className="shrink-0" />}
           Com cônjuge
         </button>
 

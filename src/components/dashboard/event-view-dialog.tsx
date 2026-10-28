@@ -104,7 +104,7 @@ export function EventViewDialog({
         {scheduleHref && (
           <Link
             href={scheduleHref as Route}
-            className="mt-6 flex items-center justify-center gap-2 rounded-full border border-brand py-2.5 text-sm font-bold text-brand transition duration-150 ease-out hover:scale-[1.02] hover:bg-brand/10 active:scale-95 dark:text-lime-from"
+            className="mt-6 flex items-center justify-center gap-2 rounded-full border border-brand py-2.5 text-sm font-bold text-brand dark:border-lime-from/60 transition duration-150 ease-out hover:scale-[1.02] hover:bg-brand/10 active:scale-95 dark:text-lime-from"
           >
             <LinkIcon icon={ClipboardList} size={16} />
             Gerenciar escala

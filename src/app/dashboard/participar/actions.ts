@@ -23,7 +23,12 @@ export async function joinEvent(
   if (!session?.user?.id) return { error: "Sessão expirada, faça login novamente" };
   const userId = session.user.id;
 
-  const spouseName = helpMode === "COUPLE" ? spouseNameInput.trim().slice(0, 120) : "";
+  let spouseName = helpMode === "COUPLE" ? spouseNameInput.trim().slice(0, 120) : "";
+  if (helpMode === "COUPLE" && !spouseName) {
+    // Nothing typed: use the spouse already saved in the profile.
+    const profile = await prisma.user.findUnique({ where: { id: userId }, select: { spouseName: true } });
+    spouseName = profile?.spouseName?.trim().slice(0, 120) ?? "";
+  }
   if (helpMode === "COUPLE" && !spouseName) return { error: "Informe o nome do cônjuge" };
 
   let signedUp: { title: string; startsAt: Date } | null = null;

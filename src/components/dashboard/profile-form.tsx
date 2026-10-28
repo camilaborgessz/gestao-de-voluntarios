@@ -103,8 +103,8 @@ export function ProfileForm({ user, showHelpMode = false }: { user: ProfileUser;
                   key={value}
                   className={`flex cursor-pointer flex-col gap-0.5 rounded-[10px] border px-4 py-3 transition-colors duration-150 ${
                     helpMode === value
-                      ? "border-brand bg-brand/10"
-                      : "border-[#6e9193] hover:border-brand"
+                      ? "border-brand bg-brand/10 dark:border-lime-from dark:bg-white/10"
+                      : "border-[#6e9193] hover:border-brand dark:hover:border-lime-from"
                   }`}
                 >
                   <input

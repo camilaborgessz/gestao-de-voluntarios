@@ -755,7 +755,7 @@ export function ScheduleBoard({
               onClick={download}
               className={
                 canShareImage
-                  ? "flex items-center gap-2 rounded-full border border-brand px-5 py-2.5 text-sm font-bold text-brand transition duration-150 ease-out hover:scale-105 hover:bg-brand/10 active:scale-95 dark:text-lime-from"
+                  ? "flex items-center gap-2 rounded-full border border-brand dark:border-lime-from/60 px-5 py-2.5 text-sm font-bold text-brand transition duration-150 ease-out hover:scale-105 hover:bg-brand/10 active:scale-95 dark:text-lime-from"
                   : "flex items-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-dark px-5 py-2.5 text-sm font-bold text-white transition duration-150 ease-out hover:scale-105 hover:brightness-110 active:scale-95 dark:bg-none dark:bg-lime-from dark:text-brand"
               }
             >
