@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -26,13 +26,20 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { notifyEntrances, saveSchedule } from "@/app/dashboard/escala/[id]/actions";
+import {
+  addVolunteerToEvent,
+  notifyEntrances,
+  removeVolunteerFromEvent,
+  saveSchedule,
+} from "@/app/dashboard/escala/[id]/actions";
 import { DEFAULT_SCHEDULE_TITLE, NEW_SLOT_PREFIX } from "@/lib/schedule-defaults";
 import { describeEventDate, personChipText, renderScheduleImage, type ScheduleImageData } from "@/lib/schedule-image";
 import { Modal } from "./modal";
+import { ConfirmDialog } from "./confirm-dialog";
 
 export interface SchedulePerson {
   enrollmentId: string;
+  userId: string;
   name: string;
   couple: boolean;
   spouseName: string | null;
@@ -76,10 +83,13 @@ function ChipFace({
   person,
   lifted = false,
   dimmed = false,
+  onRemove,
 }: {
   person: SchedulePerson;
   lifted?: boolean;
   dimmed?: boolean;
+  /** When set, shows an "x" that takes the volunteer off the event (the click must not start a drag). */
+  onRemove?: () => void;
 }) {
   return (
     <span
@@ -92,12 +102,27 @@ function ChipFace({
       <GripVertical size={13} className="opacity-70" />
       {person.couple && <Users size={13} />}
       {personLabel(person)}
+      {onRemove && (
+        <button
+          type="button"
+          title="Tirar do evento"
+          aria-label={`Tirar ${person.name} do evento`}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            onRemove();
+          }}
+          className="-mr-1.5 ml-0.5 flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full transition hover:bg-white/25 active:scale-90 dark:hover:bg-black/15"
+        >
+          <X size={12} strokeWidth={3} />
+        </button>
+      )}
     </span>
   );
 }
 
 /** A chip is both draggable and a drop target, so dropping on a name places the dragged one next to it. */
-function PersonChip({ person }: { person: SchedulePerson }) {
+function PersonChip({ person, onRemove }: { person: SchedulePerson; onRemove?: () => void }) {
   const drag = useDraggable({ id: person.enrollmentId });
   const drop = useDroppable({ id: person.enrollmentId });
 
@@ -112,7 +137,7 @@ function PersonChip({ person }: { person: SchedulePerson }) {
       title="Arraste para mover"
       className={`inline-flex rounded-full ${drop.isOver && !drag.isDragging ? "ring-2 ring-lime-to ring-offset-2" : ""}`}
     >
-      <ChipFace person={person} dimmed={drag.isDragging} />
+      <ChipFace person={person} dimmed={drag.isDragging} onRemove={onRemove} />
     </span>
   );
 }
@@ -170,6 +195,7 @@ export function ScheduleBoard({
   initialHeading,
   initialSlots,
   initialPool,
+  allUsers,
 }: {
   eventId: string;
   title: string;
@@ -179,6 +205,8 @@ export function ScheduleBoard({
   initialHeading: string;
   initialSlots: ScheduleSlot[];
   initialPool: SchedulePerson[];
+  /** Everyone registered, to pick who the leader adds to the event. */
+  allUsers: { id: string; name: string; hasSpouse: boolean }[];
 }) {
   const [slots, setSlots] = useState(initialSlots);
   const [pool, setPool] = useState(initialPool);
@@ -192,6 +220,12 @@ export function ScheduleBoard({
   const [isSending, setIsSending] = useState(false);
   const [canShareImage, setCanShareImage] = useState(false);
   const [notifiedCount, setNotifiedCount] = useState(0);
+  // Leader adds / removes volunteers of the event (applied at once on the server, not part of undo / autosave).
+  const [removing, setRemoving] = useState<SchedulePerson | null>(null);
+  const [peopleError, setPeopleError] = useState<string | null>(null);
+  const [addUserId, setAddUserId] = useState("");
+  const [addAsCouple, setAddAsCouple] = useState(false);
+  const [isChangingPeople, startPeopleChange] = useTransition();
 
   const { weekdayLong, dateFull, time } = describeEventDate(startsAt);
 
@@ -439,6 +473,53 @@ export function ScheduleBoard({
     markDirty();
   }
 
+  // ---- volunteers of the event --------------------------------------------------------------
+  const onBoardIds = new Set([...pool, ...slots.flatMap((slot) => slot.people)].map((person) => person.userId));
+  const addableUsers = allUsers.filter((user) => !onBoardIds.has(user.id));
+  const chosenUser = allUsers.find((user) => user.id === addUserId);
+
+  /** Undo / redo cannot bring back (or hide) people who were added or removed on the server, so the history starts over. */
+  function resetHistory() {
+    history.current = { past: [], future: [], group: null };
+    syncHistoryFlags();
+  }
+
+  function confirmRemove() {
+    if (!removing) return;
+    const person = removing;
+    setPeopleError(null);
+    startPeopleChange(async () => {
+      const result = await removeVolunteerFromEvent(eventId, person.enrollmentId);
+      if (!result.ok) {
+        setPeopleError(result.error);
+        return;
+      }
+      setPool((current) => current.filter((p) => p.enrollmentId !== person.enrollmentId));
+      setSlots((current) =>
+        current.map((slot) => ({ ...slot, people: slot.people.filter((p) => p.enrollmentId !== person.enrollmentId) })),
+      );
+      resetHistory();
+      setRemoving(null);
+    });
+  }
+
+  function addVolunteer() {
+    if (!chosenUser) return;
+    setPeopleError(null);
+    startPeopleChange(async () => {
+      const mode = addAsCouple && chosenUser.hasSpouse ? "COUPLE" : "INDIVIDUAL";
+      const result = await addVolunteerToEvent(eventId, chosenUser.id, mode);
+      if (!result.ok) {
+        setPeopleError(result.error);
+        return;
+      }
+      setPool((current) => [...current, result.person]);
+      resetHistory();
+      setAddUserId("");
+      setAddAsCouple(false);
+    });
+  }
+
   // ---- entries ----------------------------------------------------------------------------
   function updateSlot(id: string, patch: Partial<Pick<ScheduleSlot, "label" | "location">>) {
     commit(`slot-${id}-${Object.keys(patch)[0]}`);
@@ -644,9 +725,54 @@ export function ScheduleBoard({
             {pool.length === 0 ? (
               <p className="text-sm text-ink/50">Nenhum voluntário pendente</p>
             ) : (
-              pool.map((person) => <PersonChip key={person.enrollmentId} person={person} />)
+              pool.map((person) => (
+                <PersonChip
+                  key={person.enrollmentId}
+                  person={person}
+                  onRemove={() => {
+                    setPeopleError(null);
+                    setRemoving(person);
+                  }}
+                />
+              ))
             )}
           </DropZone>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <select
+              aria-label="Adicionar voluntário ao evento"
+              value={addUserId}
+              onChange={(event) => {
+                setAddUserId(event.target.value);
+                setAddAsCouple(false);
+              }}
+              disabled={isChangingPeople || addableUsers.length === 0}
+              className={`${inputClass} min-w-0 flex-1 sm:max-w-xs`}
+            >
+              <option value="">{addableUsers.length === 0 ? "Todos já estão no evento" : "Adicionar voluntário ao evento…"}</option>
+              {addableUsers.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.name}
+                </option>
+              ))}
+            </select>
+            {chosenUser?.hasSpouse && (
+              <label className="flex items-center gap-1.5 text-sm text-ink">
+                <input type="checkbox" checked={addAsCouple} onChange={(event) => setAddAsCouple(event.target.checked)} />
+                Com cônjuge
+              </label>
+            )}
+            <button
+              type="button"
+              onClick={addVolunteer}
+              disabled={!chosenUser || isChangingPeople}
+              className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-brand to-brand-dark px-4 py-2 text-sm font-bold text-white transition duration-150 ease-out hover:brightness-110 active:scale-95 disabled:opacity-50 dark:bg-none dark:bg-lime-from dark:text-brand"
+            >
+              {isChangingPeople && !removing ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} strokeWidth={2.5} />}
+              Adicionar
+            </button>
+          </div>
+          {peopleError && !removing && <p className="mt-2 text-sm text-danger-text">{peopleError}</p>}
         </section>
 
         <section>
@@ -690,7 +816,14 @@ export function ScheduleBoard({
 
                 <DropZone id={`slot:${slot.id}`} className="flex min-h-[110px] flex-wrap content-start items-start gap-2 p-3">
                   {slot.people.map((person) => (
-                    <PersonChip key={person.enrollmentId} person={person} />
+                    <PersonChip
+                      key={person.enrollmentId}
+                      person={person}
+                      onRemove={() => {
+                        setPeopleError(null);
+                        setRemoving(person);
+                      }}
+                    />
                   ))}
                   {slot.people.length === 0 && <p className="text-sm text-ink/40">Nenhum voluntário</p>}
                 </DropZone>
@@ -781,6 +914,19 @@ export function ScheduleBoard({
           <img src={share.url} alt="Prévia da escala" className="w-full rounded-[10px] border border-ink/15" />
 
         </Modal>
+      )}
+
+      {removing && (
+        <ConfirmDialog
+          title="Tirar do evento?"
+          description={`${removing.name} deixa de participar deste evento e é avisado(a) no sininho.`}
+          confirmLabel="Tirar"
+          loadingLabel="Tirando..."
+          isLoading={isChangingPeople}
+          error={peopleError}
+          onCancel={() => setRemoving(null)}
+          onConfirm={confirmRemove}
+        />
       )}
     </DndContext>
   );

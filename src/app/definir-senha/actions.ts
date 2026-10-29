@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import type { Route } from "next";
+import { signOut } from "@/auth";
 import { consumePasswordToken, passwordProblem } from "@/lib/password-tokens";
 import { allowAttempt } from "@/lib/rate-limit";
 
@@ -23,5 +24,8 @@ export async function setPassword(_prev: SetPasswordState, formData: FormData): 
   const done = await consumePasswordToken(token, password);
   if (!done) return { error: "Este link não vale mais. Peça um novo." };
 
+  // The link may have been opened in a browser that is still signed in as someone else (the leader who sent the
+  // invite, for instance): end that session, or the login page would send the person straight into that account.
+  await signOut({ redirect: false });
   redirect("/login?senha=ok" as Route);
 }

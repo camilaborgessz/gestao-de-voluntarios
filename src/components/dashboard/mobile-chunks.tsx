@@ -23,11 +23,20 @@ export function usePhoneChunks(total: number, step = PHONE_STEP) {
 
 export type PhoneChunks = ReturnType<typeof usePhoneChunks>;
 
-export function PhoneMoreToggle({ chunks, controls }: { chunks: PhoneChunks; controls?: string }) {
+/** `allScreens`: the paging also applies on wide screens (then the rows use "hidden" instead of "hidden sm:...", see `hideClass`). */
+export function PhoneMoreToggle({
+  chunks,
+  controls,
+  allScreens = false,
+}: {
+  chunks: PhoneChunks;
+  controls?: string;
+  allScreens?: boolean;
+}) {
   if (!chunks.needsToggle) return null;
   const expanded = chunks.remaining === 0;
   return (
-    <div className="flex justify-center sm:hidden">
+    <div className={`flex justify-center ${allScreens ? "" : "sm:hidden"}`}>
       <ShowMoreToggle
         expanded={expanded}
         onClick={expanded ? chunks.showLess : chunks.showMore}

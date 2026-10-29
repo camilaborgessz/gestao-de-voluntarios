@@ -1,5 +1,6 @@
 "use server";
 
+import { EMAIL_IN_USE_MESSAGE, findUserWithSameMailbox } from "@/lib/email-key";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -45,10 +46,7 @@ export async function updateProfile(_prevState: ActionState, formData: FormData)
   // Checkboxes are present in the form data only when ticked.
   const notifyEmail = formData.get("notifyEmail") === "on";
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing && existing.id !== session.user.id) {
-    return { error: "Já existe um usuário com esse email" };
-  }
+  if (await findUserWithSameMailbox(email, session.user.id)) return { error: EMAIL_IN_USE_MESSAGE };
 
   const before = await prisma.user.findUnique({ where: { id: session.user.id }, select: { spouseName: true } });
 

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { adminActionError } from "@/lib/auth-guards";
 import { describeEventDate } from "@/lib/schedule-image";
+import { initialReminderMarks } from "@/lib/notifications";
 
 const scheduleSchema = z.object({
   heading: z.string().max(80),
@@ -152,4 +153,99 @@ export async function notifyEntrances(eventId: string): Promise<NotifyEntrancesR
   } catch {
     return { ok: false, error: "Não foi possível avisar os voluntários." };
   }
+}
+
+export type LeaderPerson = { enrollmentId: string; userId: string; name: string; couple: boolean; spouseName: string | null };
+export type AddVolunteerResult = { ok: true; person: LeaderPerson } | { ok: false; error: string };
+
+/**
+ * The leader puts a volunteer on the event (for example, someone who asked to take part): same result as the
+ * volunteer pressing "Participar". The volunteer is told in the bell.
+ */
+export async function addVolunteerToEvent(
+  eventId: string,
+  userId: string,
+  mode: "INDIVIDUAL" | "COUPLE" = "INDIVIDUAL",
+): Promise<AddVolunteerResult> {
+  const denied = await adminActionError();
+  if (denied) return { ok: false, error: denied };
+
+  try {
+    const [event, user] = await Promise.all([
+      prisma.event.findUnique({ where: { id: eventId }, select: { title: true, startsAt: true } }),
+      prisma.user.findUnique({ where: { id: userId }, select: { name: true, spouseName: true } }),
+    ]);
+    if (!event) return { ok: false, error: "Evento não encontrado" };
+    if (!user) return { ok: false, error: "Voluntário não encontrado" };
+
+    const spouseName = mode === "COUPLE" ? user.spouseName?.trim() || null : null;
+    if (mode === "COUPLE" && !spouseName) return { ok: false, error: "Esse voluntário não tem cônjuge no perfil" };
+
+    const existing = await prisma.enrollment.findUnique({ where: { userId_eventId: { userId, eventId } } });
+    if (existing?.status === "CONFIRMED") return { ok: false, error: "Esse voluntário já está neste evento" };
+
+    const data = { status: "CONFIRMED" as const, helpMode: mode, spouseName, ...initialReminderMarks(event.startsAt) };
+    const enrollment = existing
+      ? await prisma.enrollment.update({ where: { id: existing.id }, data })
+      : await prisma.enrollment.create({ data: { userId, eventId, ...data } });
+
+    const { dateFull, time } = describeEventDate(event.startsAt);
+    await prisma.notification.create({
+      data: {
+        userId,
+        eventId,
+        kind: "ENTRY_ASSIGNED",
+        title: "Escala atualizada",
+        message: `Você foi adicionado(a) a "${event.title}", ${dateFull} às ${time}.`,
+      },
+    });
+
+    revalidateEventScreens(eventId);
+    return {
+      ok: true,
+      person: { enrollmentId: enrollment.id, userId, name: user.name, couple: mode === "COUPLE", spouseName },
+    };
+  } catch {
+    return { ok: false, error: "Não foi possível adicionar. Tente novamente." };
+  }
+}
+
+export type RemoveVolunteerResult = { ok: true } | { ok: false; error: string };
+
+/** The leader takes a volunteer off the event (same result as the volunteer pressing "cancelar"). The volunteer is told in the bell. */
+export async function removeVolunteerFromEvent(eventId: string, enrollmentId: string): Promise<RemoveVolunteerResult> {
+  const denied = await adminActionError();
+  if (denied) return { ok: false, error: denied };
+
+  try {
+    const enrollment = await prisma.enrollment.findFirst({
+      where: { id: enrollmentId, eventId },
+      select: { id: true, userId: true, event: { select: { title: true, startsAt: true } } },
+    });
+    if (!enrollment) return { ok: false, error: "Esse voluntário já não está neste evento" };
+
+    await prisma.enrollment.delete({ where: { id: enrollment.id } });
+
+    const { dateFull, time } = describeEventDate(enrollment.event.startsAt);
+    await prisma.notification.create({
+      data: {
+        userId: enrollment.userId,
+        eventId,
+        kind: "ENTRY_ASSIGNED",
+        title: "Escala atualizada",
+        message: `Você foi retirado(a) de "${enrollment.event.title}", ${dateFull} às ${time}.`,
+      },
+    });
+
+    revalidateEventScreens(eventId);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Não foi possível remover. Tente novamente." };
+  }
+}
+
+function revalidateEventScreens(eventId: string) {
+  revalidatePath(`/dashboard/escala/${eventId}`);
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/agenda");
 }

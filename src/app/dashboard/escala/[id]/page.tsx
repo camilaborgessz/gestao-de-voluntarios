@@ -16,14 +16,20 @@ export default async function EscalaPage({ params }: { params: Promise<{ id: str
       enrollments: {
         where: { status: "CONFIRMED" },
         orderBy: [{ position: "asc" }, { createdAt: "asc" }],
-        include: { user: { select: { name: true, spouseName: true } } },
+        include: { user: { select: { id: true, name: true, spouseName: true } } },
       },
     },
   });
   if (!event) notFound();
 
+  const allUsers = await prisma.user.findMany({
+    select: { id: true, name: true, spouseName: true },
+    orderBy: { name: "asc" },
+  });
+
   const toPerson = (enrollment: (typeof event.enrollments)[number]): SchedulePerson => ({
     enrollmentId: enrollment.id,
+    userId: enrollment.user.id,
     name: enrollment.user.name,
     couple: enrollment.helpMode === "COUPLE",
     spouseName: enrollment.spouseName ?? enrollment.user.spouseName,
@@ -64,6 +70,7 @@ export default async function EscalaPage({ params }: { params: Promise<{ id: str
         initialHeading={event.scheduleTitle ?? DEFAULT_SCHEDULE_TITLE}
         initialSlots={slots}
         initialPool={pool}
+        allUsers={allUsers.map((user) => ({ id: user.id, name: user.name, hasSpouse: !!user.spouseName?.trim() }))}
       />
     </div>
   );

@@ -81,7 +81,7 @@ export function EventManagement({ events, uniforms }: { events: EventRecord[]; u
         {events.length === 0 && <p className="text-sm text-ink/60">Nenhum evento programado</p>}
 
         {events.map((event, index) => (
-          <div key={event.id} className={chunks.isHidden(index) ? "hidden sm:block" : undefined}>
+          <div key={event.id} className={chunks.isHidden(index) ? "hidden" : undefined}>
             <EventManageRow
               {...formatEventSchedule(event.startsAt)}
               title={event.title}
@@ -90,7 +90,7 @@ export function EventManagement({ events, uniforms }: { events: EventRecord[]; u
             />
           </div>
         ))}
-        <PhoneMoreToggle chunks={chunks} />
+        <PhoneMoreToggle chunks={chunks} allScreens />
       </div>
 
       {(dialog.mode === "create" || dialog.mode === "edit") && (

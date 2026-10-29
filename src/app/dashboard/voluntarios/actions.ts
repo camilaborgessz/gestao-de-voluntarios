@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { adminActionError } from "@/lib/auth-guards";
+import { EMAIL_IN_USE_MESSAGE, findUserWithSameMailbox } from "@/lib/email-key";
 import { sendAccountEmail } from "@/lib/email";
 import { TOKEN_TTL_LABEL, issuePasswordToken, passwordLink } from "@/lib/password-tokens";
 
@@ -61,10 +62,8 @@ export async function createUser(_prevState: ActionState, formData: FormData): P
 
   const { name, email, phone, birthDate, role } = parsed.data;
 
-  const existing = await prisma.user.findFirst({ where: { email: { equals: email, mode: "insensitive" } } });
-  if (existing) {
-    return { error: "Já existe um usuário com esse email" };
-  }
+  // Same inbox counts as the same email: "nome+algo@gmail.com" cannot be used to register the same person twice.
+  if (await findUserWithSameMailbox(email)) return { error: EMAIL_IN_USE_MESSAGE };
 
   // No password: the person chooses it through the emailed link, so nobody else ever sees it.
   const user = await prisma.user.create({
@@ -86,6 +85,8 @@ export async function updateUser(_prevState: ActionState, formData: FormData): P
   }
 
   const { id, name, email, phone, birthDate, role } = parsed.data;
+
+  if (await findUserWithSameMailbox(email, id)) return { error: EMAIL_IN_USE_MESSAGE };
 
   await prisma.user.update({
     where: { id },

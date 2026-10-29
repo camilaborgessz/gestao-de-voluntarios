@@ -18,6 +18,7 @@ import { eventArchiveDaysLeft, noticeArchiveDaysLeft, ARCHIVE_DAYS } from "@/lib
 import { getVerseOfTheDay } from "@/lib/verse-of-the-day";
 import { VERSES } from "@/lib/verses-arc";
 import { resolveAppUrl } from "@/lib/app-url";
+import { emailKey } from "@/lib/email-key";
 import { passwordProblem, MIN_PASSWORD_LENGTH, TOKEN_TTL_MS } from "@/lib/password-tokens";
 
 describe("nome do cônjuge (spouse-key)", () => {
@@ -170,5 +171,24 @@ describe("endereço usado nos links dos e-mails (app-url)", () => {
     assert.equal(resolveAppUrl({ onVercel: false, requestHost: "exemplo.com.br" }), "https://exemplo.com.br");
     assert.equal(resolveAppUrl({ onVercel: false, requestHost: "localhost:3000" }), "http://localhost:3000");
     assert.equal(resolveAppUrl({ onVercel: false }), null);
+  });
+});
+
+describe("mesma caixa de e-mail (email-key)", () => {
+  test("ignora o +apelido, em qualquer provedor", () => {
+    assert.equal(emailKey("borgescamila09+jeova@gmail.com"), emailKey("borgescamila09@gmail.com"));
+    assert.equal(emailKey("ana+teste@outlook.com"), emailKey("ana@outlook.com"));
+  });
+  test("no Gmail os pontos e o googlemail.com também são a mesma caixa", () => {
+    assert.equal(emailKey("borges.camila09@gmail.com"), emailKey("borgescamila09@gmail.com"));
+    assert.equal(emailKey("borgescamila09@googlemail.com"), emailKey("borgescamila09@gmail.com"));
+  });
+  test("maiúsculas e espaços não contam", () => {
+    assert.equal(emailKey("  Camila@Gmail.COM "), "camila@gmail.com");
+  });
+  test("fora do Gmail os pontos continuam valendo, e pessoas diferentes continuam diferentes", () => {
+    assert.notEqual(emailKey("a.b@empresa.com"), emailKey("ab@empresa.com"));
+    assert.notEqual(emailKey("ana@gmail.com"), emailKey("anna@gmail.com"));
+    assert.notEqual(emailKey("ana@gmail.com"), emailKey("ana@outlook.com"));
   });
 });
