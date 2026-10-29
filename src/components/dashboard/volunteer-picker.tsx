@@ -61,7 +61,7 @@ export function VolunteerPicker({
         autoComplete="off"
         value={query}
         disabled={disabled || users.length === 0}
-        placeholder={users.length === 0 ? "Todos já estão no evento" : "Digite o nome para adicionar…"}
+        placeholder={users.length === 0 ? "Todos já estão no evento" : "Buscar pelo nome…"}
         onChange={(event) => {
           setQuery(event.target.value);
           setActive(0);
