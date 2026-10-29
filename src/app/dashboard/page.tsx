@@ -120,6 +120,7 @@ export default async function DashboardPage() {
                 events={upcomingEvents}
                 uniforms={uniforms.map((u) => u.name)}
                 initialCount={3}
+                nowIso={wallClockNow().toISOString()}
                 readOnly={isVolunteer}
                 coupleOption={profile?.helpMode === "COUPLE"}
                 defaultSpouseName={profile?.spouseName ?? ""}

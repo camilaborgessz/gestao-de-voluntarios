@@ -3,7 +3,7 @@ import { seatsTaken } from "@/lib/seats";
 import { auth } from "@/auth";
 import { CalendarBoard, type CalendarDayCell } from "@/components/dashboard/calendar-board";
 import type { EventRecord } from "@/components/dashboard/event-management";
-import { buildMonthGrid, toDateInputValue, currentYearMonth } from "@/lib/event-schedule";
+import { buildMonthGrid, toDateInputValue, currentYearMonth, wallClockNow } from "@/lib/event-schedule";
 
 function resolveMonth(monthParam?: string, yearParam?: string) {
   const nowUtc = currentYearMonth();
@@ -86,6 +86,7 @@ export default async function AgendaPage({
       events={events}
       uniforms={uniforms.map((u) => u.name)}
       today={isCurrentMonth ? nowUtc.day : undefined}
+      nowIso={wallClockNow().toISOString()}
       readOnly={isVolunteer}
       coupleOption={profile?.helpMode === "COUPLE"}
       defaultSpouseName={profile?.spouseName ?? ""}

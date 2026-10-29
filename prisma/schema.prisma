@@ -140,8 +140,8 @@ model Enrollment {
   @@index([status])
 }
 
-/// In-app notification (bell icon). Also tracks the WhatsApp delivery of the same message.
-/// Notifications disappear 7 days after they were created.
+/// In-app notification (bell icon). For reminders it also tracks the email delivery of the same message.
+/// Unread notifications disappear 7 days after they were created, read ones 3 days after being read.
 model Notification {
   id               String         @id @default(cuid())
   userId           String

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { initialReminderMarks, notifyLeadersOfSignup } from "@/lib/notifications";
+import { wallClockNow } from "@/lib/event-schedule";
 
 export type ParticipationResult = { error?: string } | undefined;
 
@@ -42,6 +43,7 @@ export async function joinEvent(
         },
       });
       if (!event) return "Evento não encontrado";
+      if (event.startsAt.getTime() <= wallClockNow().getTime()) return "Este evento já aconteceu";
 
       const existing = await tx.enrollment.findUnique({
         where: { userId_eventId: { userId, eventId } },
@@ -89,6 +91,9 @@ export async function leaveEvent(eventId: string): Promise<ParticipationResult> 
   if (!session?.user?.id) return { error: "Sessão expirada, faça login novamente" };
 
   try {
+    // Past events keep their participants: giving the spot back afterwards would erase a service already done.
+    const event = await prisma.event.findUnique({ where: { id: eventId }, select: { startsAt: true } });
+    if (event && event.startsAt.getTime() <= wallClockNow().getTime()) return { error: "Este evento já aconteceu" };
     await prisma.enrollment.deleteMany({ where: { userId: session.user.id, eventId } });
   } catch {
     return { error: "Não foi possível cancelar sua participação. Tente novamente." };

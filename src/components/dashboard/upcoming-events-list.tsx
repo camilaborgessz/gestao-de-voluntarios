@@ -39,6 +39,7 @@ export function UpcomingEventsList({
   events: serverEvents,
   uniforms,
   initialCount = 3,
+  nowIso,
   readOnly = false,
   coupleOption = false,
   defaultSpouseName = "",
@@ -46,6 +47,8 @@ export function UpcomingEventsList({
   events: EventRecord[];
   uniforms: string[];
   initialCount?: number;
+  /** The current moment as a wall-clock date (see `wallClockNow`): events already started cannot be joined. */
+  nowIso: string;
   /** Volunteer mode: no edit/delete, only view + participate. */
   readOnly?: boolean;
   /** Volunteer serves as a couple: offer "alone / with spouse" when joining. */
@@ -54,6 +57,8 @@ export function UpcomingEventsList({
 }) {
   // Joining / leaving shows up instantly; the server data replaces it as soon as it arrives.
   const [events, applyOptimistic] = useOptimistic(serverEvents, applyParticipation);
+  const nowMs = new Date(nowIso).getTime();
+  const isPast = (event: EventRecord) => event.startsAt.getTime() <= nowMs;
   const [dialog, setDialog] = useState<DialogState>({ mode: "closed" });
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -142,14 +147,18 @@ export function UpcomingEventsList({
             isAdmin={!readOnly}
             participation={
               readOnly ? (
-                <ParticipateButton
-                  onOptimistic={(joined, mode) => applyOptimistic({ id: event.id, joined, mode })}
-                  eventId={event.id}
-                  joined={event.joined ?? false}
-                  joinedMode={event.joinedMode}
-                  coupleOption={coupleOption}
-                defaultSpouseName={defaultSpouseName}
-                />
+                isPast(event) ? (
+                  <p className="text-sm font-medium text-ink/60">Já aconteceu</p>
+                ) : (
+                  <ParticipateButton
+                    onOptimistic={(joined, mode) => applyOptimistic({ id: event.id, joined, mode })}
+                    eventId={event.id}
+                    joined={event.joined ?? false}
+                    joinedMode={event.joinedMode}
+                    coupleOption={coupleOption}
+                    defaultSpouseName={defaultSpouseName}
+                  />
+                )
               ) : undefined
             }
             onView={() => openDialog({ mode: "view", event })}
@@ -179,14 +188,18 @@ export function UpcomingEventsList({
           scheduleHref={readOnly ? undefined : `/dashboard/escala/${viewing.id}`}
           footer={
             readOnly ? (
-              <ParticipateButton
-                onOptimistic={(joined, mode) => applyOptimistic({ id: viewing.id, joined, mode })}
-                eventId={viewing.id}
-                joined={viewing.joined ?? false}
-                joinedMode={viewing.joinedMode}
-                coupleOption={coupleOption}
-                defaultSpouseName={defaultSpouseName}
-              />
+              isPast(viewing) ? (
+                <p className="text-sm font-medium text-ink/60">Este evento já aconteceu.</p>
+              ) : (
+                <ParticipateButton
+                  onOptimistic={(joined, mode) => applyOptimistic({ id: viewing.id, joined, mode })}
+                  eventId={viewing.id}
+                  joined={viewing.joined ?? false}
+                  joinedMode={viewing.joinedMode}
+                  coupleOption={coupleOption}
+                  defaultSpouseName={defaultSpouseName}
+                />
+              )
             ) : undefined
           }
         />

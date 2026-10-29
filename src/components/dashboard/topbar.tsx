@@ -6,7 +6,7 @@ import { NotificationBell } from "./notification-bell";
 export function Topbar() {
   return (
     <header
-      className="sticky top-0 z-30 flex h-16 w-full items-center justify-between bg-surface px-4 shadow-[0_4px_20px_rgba(0,0,0,0.06)] dark:bg-brand md:h-[89px] md:px-10"
+      className="sticky top-0 z-30 flex h-16 w-full items-center justify-between bg-surface px-4 shadow-[0_4px_20px_rgba(0,0,0,0.06)] dark:bg-brand tall:h-[89px] side:px-10"
       style={{ viewTransitionName: "dash-topbar" }}
     >
       <Image
@@ -16,7 +16,7 @@ export function Topbar() {
         height={61}
         priority
         unoptimized
-        className="h-9 w-auto md:h-[61px] dark:hidden"
+        className="h-9 w-auto tall:h-[61px] dark:hidden"
       />
       <Image
         src="/logo-dark.png"
@@ -25,7 +25,7 @@ export function Topbar() {
         height={61}
         priority
         unoptimized
-        className="hidden h-9 w-auto md:h-[61px] dark:block"
+        className="hidden h-9 w-auto tall:h-[61px] dark:block"
       />
 
       <div className="flex items-center gap-2 md:gap-3">

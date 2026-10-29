@@ -59,6 +59,7 @@ export function CalendarBoard({
   events: serverEvents,
   uniforms,
   today,
+  nowIso,
   readOnly = false,
   coupleOption = false,
   defaultSpouseName = "",
@@ -69,6 +70,8 @@ export function CalendarBoard({
   events: EventRecord[];
   uniforms: string[];
   today?: number;
+  /** The current moment as a wall-clock date (see `wallClockNow`), to tell which events already happened. */
+  nowIso: string;
   /** Volunteer mode: events can only be viewed/joined, never created, edited or deleted. */
   readOnly?: boolean;
   coupleOption?: boolean;
@@ -140,17 +143,24 @@ export function CalendarBoard({
   // A day picked in another month no longer applies after navigating.
   const selectedDay = selectedIso && weeks.some((week) => week.some((cell) => cell.iso === selectedIso)) ? selectedIso : null;
   const selectedEvents = selectedDay ? (eventsByIso.get(selectedDay) ?? []) : [];
-  const sortedEvents = [...events].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+  const nowMs = new Date(nowIso).getTime();
+  const isPast = (event: EventRecord) => event.startsAt.getTime() <= nowMs;
+  // Phone list: what is coming first (nearest on top), what already happened below.
+  const upcomingEvents = events.filter((event) => !isPast(event)).sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+  const pastEvents = events.filter(isPast).sort((a, b) => b.startsAt.getTime() - a.startsAt.getTime());
 
   function renderEventRow(event: EventRecord) {
     const { date, weekday, time } = formatEventSchedule(event.startsAt);
     const filled = event.filled ?? 0;
+    const past = isPast(event);
     return (
       <button
         key={event.id}
         type="button"
         onClick={() => openDialog({ mode: "view", event })}
-        className="flex items-center gap-3 rounded-[10px] border border-brand/[0.17] px-3 py-2.5 text-left active:bg-brand/5 dark:border-white/10"
+        className={`flex items-center gap-3 rounded-[10px] border border-brand/[0.17] px-3 py-2.5 text-left active:bg-brand/5 dark:border-white/10 ${
+          past ? "bg-ink/[0.04] opacity-60 grayscale" : ""
+        }`}
       >
         <span className="w-14 shrink-0 font-display text-lg font-bold leading-tight text-ink">{date}</span>
         <span className="min-w-0 flex-1">
@@ -323,7 +333,9 @@ export function CalendarBoard({
                               openDialog({ mode: "view", event });
                             }}
                             title={`Ver "${event.title}"`}
-                            className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-brand to-brand-dark dark:bg-none dark:bg-lime-from/20 dark:text-lime-from py-2 pl-2.5 pr-3 text-left shadow-sm transition duration-150 ease-out hover:scale-[1.02] hover:shadow-[0_4px_12px_rgba(2,87,92,0.35)] active:scale-95"
+                            className={`flex items-center gap-1.5 rounded-full bg-gradient-to-r from-brand to-brand-dark dark:bg-none dark:bg-lime-from/20 dark:text-lime-from py-2 pl-2.5 pr-3 text-left shadow-sm transition duration-150 ease-out hover:scale-[1.02] hover:shadow-[0_4px_12px_rgba(2,87,92,0.35)] active:scale-95 ${
+                              isPast(event) ? "opacity-60 grayscale" : ""
+                            }`}
                           >
                             <span className={`size-2 shrink-0 rounded-full bg-gradient-to-b ${statusDot[status]}`} />
                             <div className="min-w-0 flex-1">
@@ -396,7 +408,13 @@ export function CalendarBoard({
             </>
           ) : (
             <>
-              {sortedEvents.map(renderEventRow)}
+              {upcomingEvents.map(renderEventRow)}
+              {pastEvents.length > 0 && (
+                <>
+                  <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-ink/50">Já aconteceram</p>
+                  {pastEvents.map(renderEventRow)}
+                </>
+              )}
             </>
           )}
         </div>
@@ -432,6 +450,9 @@ export function CalendarBoard({
           scheduleHref={readOnly ? undefined : `/dashboard/escala/${viewing.id}`}
           footer={
             readOnly ? (
+              isPast(viewing) ? (
+                <p className="text-sm font-medium text-ink/60">Este evento já aconteceu.</p>
+              ) : (
               <ParticipateButton
                 onOptimistic={(joined, mode) => applyOptimistic({ id: viewing.id, joined, mode })}
                 eventId={viewing.id}
@@ -440,6 +461,7 @@ export function CalendarBoard({
                 coupleOption={coupleOption}
                 defaultSpouseName={defaultSpouseName}
               />
+              )
             ) : undefined
           }
         />

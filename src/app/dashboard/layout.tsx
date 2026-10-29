@@ -15,7 +15,7 @@ export default async function DashboardLayout({
       <Topbar />
       <div className="flex flex-1">
         <Sidebar role={session.user.role} />
-        <main className="min-w-0 flex-1 px-4 pb-28 pt-6 md:py-8 md:pb-8 md:pl-[116px] md:pr-10">
+        <main className="min-w-0 flex-1 px-4 pb-28 pt-6 side:py-8 side:pb-8 side:pl-[116px] side:pr-10">
           <ViewTransition name="dash-content" enter="dash-content" exit="dash-content" default="none">
             {children}
           </ViewTransition>

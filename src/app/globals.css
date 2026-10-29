@@ -2,6 +2,15 @@
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
+/*
+ * The desktop shell (side menu) needs a window that is wide AND tall enough. A high browser zoom (or a short
+ * laptop screen) shrinks the height in CSS pixels, so the shell falls back to the compact version, then to
+ * the bottom bar, instead of letting the menu cover the logout button.
+ *   side: side menu + compact header   |   tall: also the taller header and the decorative menu caps
+ */
+@custom-variant side (@media (min-width: 48rem) and (min-height: 32.5rem));
+@custom-variant tall (@media (min-width: 48rem) and (min-height: 47.5rem));
+
 :root {
   --background: #f3f6f6;
   --foreground: #16302c;
