@@ -43,7 +43,7 @@ export async function joinEvent(
         },
       });
       if (!event) return "Evento não encontrado";
-      if (event.startsAt.getTime() <= wallClockNow().getTime()) return "Este evento já aconteceu";
+      if (event.startsAt.getTime() <= wallClockNow().getTime()) return "Este evento já foi finalizado";
 
       const existing = await tx.enrollment.findUnique({
         where: { userId_eventId: { userId, eventId } },
@@ -93,7 +93,7 @@ export async function leaveEvent(eventId: string): Promise<ParticipationResult> 
   try {
     // Past events keep their participants: giving the spot back afterwards would erase a service already done.
     const event = await prisma.event.findUnique({ where: { id: eventId }, select: { startsAt: true } });
-    if (event && event.startsAt.getTime() <= wallClockNow().getTime()) return { error: "Este evento já aconteceu" };
+    if (event && event.startsAt.getTime() <= wallClockNow().getTime()) return { error: "Este evento já foi finalizado" };
     await prisma.enrollment.deleteMany({ where: { userId: session.user.id, eventId } });
   } catch {
     return { error: "Não foi possível cancelar sua participação. Tente novamente." };

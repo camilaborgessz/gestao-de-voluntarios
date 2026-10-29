@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { ShowMoreToggle } from "./show-more-toggle";
+import { PhoneMoreToggle, usePhoneChunks } from "./mobile-chunks";
 
 export interface Notice {
   id?: string;
@@ -15,6 +16,7 @@ export function NoticesCard({
   notices,
   editable = false,
   initialCount,
+  phoneChunks = false,
   onEdit,
   onDelete,
 }: {
@@ -22,10 +24,13 @@ export function NoticesCard({
   editable?: boolean;
   /** When set, only this many notices show until the reader expands the list. */
   initialCount?: number;
+  /** Phones only: show the notices three at a time with "Ver mais" (wider screens show them all). */
+  phoneChunks?: boolean;
   onEdit?: (notice: Notice) => void;
   onDelete?: (notice: Notice) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const chunks = usePhoneChunks(notices.length);
 
   const collapsible = initialCount != null && notices.length > initialCount;
   const visibleNotices = collapsible && !expanded ? notices.slice(0, initialCount) : notices;
@@ -39,7 +44,7 @@ export function NoticesCard({
         {visibleNotices.map((notice, index) => (
           <div
             key={notice.id ?? index}
-            className="flex gap-3 rounded-[10px] border border-[#f2f2f2] bg-surface p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:border-white/10 dark:bg-surface-raised dark:shadow-[0_4px_16px_rgba(0,0,0,0.35)]"
+            className={`${phoneChunks && chunks.isHidden(index) ? "hidden sm:flex" : "flex"} gap-3 rounded-[10px] border border-[#f2f2f2] bg-surface p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:border-white/10 dark:bg-surface-raised dark:shadow-[0_4px_16px_rgba(0,0,0,0.35)]`}
           >
             <div className="w-[3px] shrink-0 rounded-full bg-gradient-to-b from-brand to-brand-dark dark:from-lime-from dark:to-lime-to" />
             <div className="flex flex-1 flex-col gap-2">
@@ -72,6 +77,8 @@ export function NoticesCard({
           </div>
         ))}
       </div>
+
+      {phoneChunks && <PhoneMoreToggle chunks={chunks} controls="dashboard-notices" />}
 
       {collapsible && (
         <ShowMoreToggle

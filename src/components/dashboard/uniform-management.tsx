@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { UniformFormDialog } from "./uniform-form-dialog";
 import { ConfirmDialog } from "./confirm-dialog";
+import { PhoneMoreToggle, usePhoneChunks } from "./mobile-chunks";
 import { deleteUniform } from "@/app/dashboard/eventos/novo/actions";
 
 export interface UniformRecord {
@@ -18,6 +19,7 @@ type DialogState =
   | { mode: "delete"; uniform: UniformRecord };
 
 export function UniformManagement({ uniforms }: { uniforms: UniformRecord[] }) {
+  const chunks = usePhoneChunks(uniforms.length);
   const [dialog, setDialog] = useState<DialogState>({ mode: "closed" });
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, startDeleteTransition] = useTransition();
@@ -57,10 +59,10 @@ export function UniformManagement({ uniforms }: { uniforms: UniformRecord[] }) {
       <div className="grid grid-cols-1 gap-3 rounded-[10px] bg-gradient-to-r from-brand to-brand-dark p-5 shadow-[0_4px_17px_rgba(0,0,0,0.25)] sm:grid-cols-2 dark:bg-none dark:bg-surface">
         {uniforms.length === 0 && <p className="col-span-full text-sm text-white/80">Nenhum uniforme cadastrado</p>}
 
-        {uniforms.map((uniform) => (
+        {uniforms.map((uniform, index) => (
           <div
             key={uniform.id}
-            className="flex items-center justify-between gap-2 rounded-full bg-gradient-to-r from-white to-bg px-4 py-2 dark:from-surface-raised dark:to-surface-raised transition-shadow duration-150 hover:shadow-md"
+            className={`${chunks.isHidden(index) ? "hidden sm:flex" : "flex"} items-center justify-between gap-2 rounded-full bg-gradient-to-r from-white to-bg px-4 py-2 dark:from-surface-raised dark:to-surface-raised transition-shadow duration-150 hover:shadow-md`}
           >
             <span className="truncate text-sm font-semibold text-ink">{uniform.name}</span>
             <div className="flex shrink-0 items-center gap-2 text-ink/70">
@@ -82,6 +84,7 @@ export function UniformManagement({ uniforms }: { uniforms: UniformRecord[] }) {
           </div>
         ))}
       </div>
+      <PhoneMoreToggle chunks={chunks} />
 
       {(dialog.mode === "create" || dialog.mode === "edit") && (
         <UniformFormDialog

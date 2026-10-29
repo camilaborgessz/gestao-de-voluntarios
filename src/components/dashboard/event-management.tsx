@@ -6,6 +6,7 @@ import { EventManageRow } from "./event-manage-row";
 import { EventFormDialog } from "./event-form-dialog";
 import { EventViewDialog } from "./event-view-dialog";
 import { ConfirmDialog } from "./confirm-dialog";
+import { PhoneMoreToggle, usePhoneChunks } from "./mobile-chunks";
 import { formatEventSchedule } from "@/lib/event-schedule";
 import { deleteEvent } from "@/app/dashboard/eventos/novo/actions";
 
@@ -36,6 +37,7 @@ type DialogState =
   | { mode: "delete"; event: EventRecord };
 
 export function EventManagement({ events, uniforms }: { events: EventRecord[]; uniforms: string[] }) {
+  const chunks = usePhoneChunks(events.length);
   const [dialog, setDialog] = useState<DialogState>({ mode: "closed" });
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, startDeleteTransition] = useTransition();
@@ -78,15 +80,17 @@ export function EventManagement({ events, uniforms }: { events: EventRecord[]; u
       <div className="flex flex-col gap-4 rounded-[10px] bg-surface p-5 shadow-[0_4px_37px_rgba(0,0,0,0.1)]">
         {events.length === 0 && <p className="text-sm text-ink/60">Nenhum evento programado</p>}
 
-        {events.map((event) => (
-          <EventManageRow
-            key={event.id}
-            {...formatEventSchedule(event.startsAt)}
-            title={event.title}
-            tags={event.dressCode}
-            onView={() => openDialog({ mode: "view", event })}
-          />
+        {events.map((event, index) => (
+          <div key={event.id} className={chunks.isHidden(index) ? "hidden sm:block" : undefined}>
+            <EventManageRow
+              {...formatEventSchedule(event.startsAt)}
+              title={event.title}
+              tags={event.dressCode}
+              onView={() => openDialog({ mode: "view", event })}
+            />
+          </div>
         ))}
+        <PhoneMoreToggle chunks={chunks} />
       </div>
 
       {(dialog.mode === "create" || dialog.mode === "edit") && (

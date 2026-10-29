@@ -1,3 +1,4 @@
+import { appBaseUrl } from "@/lib/app-url";
 import nodemailer, { type Transporter } from "nodemailer";
 /** Outcome of one delivery attempt. */
 export type DeliveryResult = { status: "SENT" | "SKIPPED" | "FAILED"; error?: string };
@@ -52,9 +53,8 @@ export interface ReminderEmail {
   slot: string | null;
 }
 
-function buildReminderMessage(email: ReminderEmail) {
+function buildReminderMessage(email: ReminderEmail, appUrl: string | null) {
   const first = email.name.split(" ")[0];
-  const appUrl = process.env.APP_URL?.trim();
   const details: [string, string][] = [["Quando", email.when]];
   if (email.slot) details.push(["Sua entrada", email.slot]);
   if (email.uniform.length > 0) details.push(["Traje", email.uniform.join(", ")]);
@@ -105,7 +105,7 @@ export async function sendReminderEmail(email: ReminderEmail): Promise<DeliveryR
     await transporter().sendMail({
       from: process.env.EMAIL_FROM || `"Koinonia" <${process.env.SMTP_USER}>`,
       to: email.to,
-      ...buildReminderMessage(email),
+      ...buildReminderMessage(email, await appBaseUrl()),
     });
     return { status: "SENT" };
   } catch (error) {

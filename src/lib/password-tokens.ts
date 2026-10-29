@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "crypto";
-import { headers } from "next/headers";
+import { appBaseUrl } from "@/lib/app-url";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { forgetPasswordCheck } from "@/lib/session-check";
@@ -29,15 +29,9 @@ export async function issuePasswordToken(userId: string, purpose: Purpose) {
   return token;
 }
 
-/** The link to put in the email. Uses APP_URL when set, otherwise the address of the current request. */
+/** The link to put in the email (see `appBaseUrl`: never a localhost address when running online). */
 export async function passwordLink(token: string) {
-  let base = process.env.APP_URL?.trim().replace(/\/+$/, "");
-  if (!base) {
-    const requestHeaders = await headers();
-    const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
-    const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-    base = `${protocol}://${host}`;
-  }
+  const base = (await appBaseUrl()) ?? "http://localhost:3000";
   return `${base}/definir-senha?token=${encodeURIComponent(token)}`;
 }
 

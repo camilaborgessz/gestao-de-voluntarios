@@ -9,8 +9,9 @@ import { EventViewDialog } from "./event-view-dialog";
 import { ConfirmDialog } from "./confirm-dialog";
 import { ParticipateButton } from "./participate-button";
 import { deleteEvent } from "@/app/dashboard/eventos/novo/actions";
-import { toDateInputValue, formatEventSchedule, MONTH_NAMES, WEEKDAYS_SHORT } from "@/lib/event-schedule";
+import { toDateInputValue, formatEventSchedule, MONTH_NAMES, MONTH_NAMES_SHORT, WEEKDAYS_SHORT } from "@/lib/event-schedule";
 import { applyParticipation } from "@/lib/optimistic-participation";
+import { useWallClockNow } from "./use-wall-clock-now";
 
 export interface CalendarDayCell {
   day: number;
@@ -143,7 +144,7 @@ export function CalendarBoard({
   // A day picked in another month no longer applies after navigating.
   const selectedDay = selectedIso && weeks.some((week) => week.some((cell) => cell.iso === selectedIso)) ? selectedIso : null;
   const selectedEvents = selectedDay ? (eventsByIso.get(selectedDay) ?? []) : [];
-  const nowMs = new Date(nowIso).getTime();
+  const nowMs = useWallClockNow(nowIso);
   const isPast = (event: EventRecord) => event.startsAt.getTime() <= nowMs;
   // Phone list: what is coming first (nearest on top), what already happened below.
   const upcomingEvents = events.filter((event) => !isPast(event)).sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
@@ -190,9 +191,14 @@ export function CalendarBoard({
       </div>
 
       <div className="rounded-[10px] bg-surface p-4 shadow-[0_4px_30px_rgba(0,0,0,0.18)] sm:p-6">
-        <div className="mb-4 flex items-center gap-2">
-          <h2 className="text-xl font-semibold text-ink">
-            {MONTH_NAMES[month]} de {year}
+        <div className="mb-3 flex items-center gap-1 sm:mb-4 sm:gap-2">
+          <h2 className="mr-1 text-lg font-semibold text-ink sm:mr-0 sm:text-xl">
+            <span className="sm:hidden">
+              {MONTH_NAMES_SHORT[month]} {year}
+            </span>
+            <span className="hidden sm:inline">
+              {MONTH_NAMES[month]} de {year}
+            </span>
           </h2>
           <button
             type="button"
@@ -200,12 +206,12 @@ export function CalendarBoard({
             disabled={isNavigating}
             aria-label="Mês anterior"
             title="Mês anterior"
-            className="rounded-full p-0.5 text-ink/70 transition duration-150 ease-out hover:scale-125 hover:text-ink active:scale-90 disabled:cursor-wait disabled:hover:scale-100"
+            className="flex size-10 items-center justify-center rounded-full text-ink/70 transition duration-150 ease-out hover:bg-ink/10 hover:text-ink active:scale-90 disabled:cursor-wait sm:size-7"
           >
             {isNavigating && navDir === "prev" ? (
-              <Loader2 size={16} className="animate-spin" />
+              <Loader2 className="size-5 animate-spin sm:size-4" />
             ) : (
-              <ChevronLeft size={16} />
+              <ChevronLeft className="size-6 sm:size-4" />
             )}
           </button>
           <button
@@ -214,12 +220,12 @@ export function CalendarBoard({
             disabled={isNavigating}
             aria-label="Próximo mês"
             title="Próximo mês"
-            className="rounded-full p-0.5 text-ink/70 transition duration-150 ease-out hover:scale-125 hover:text-ink active:scale-90 disabled:cursor-wait disabled:hover:scale-100"
+            className="flex size-10 items-center justify-center rounded-full text-ink/70 transition duration-150 ease-out hover:bg-ink/10 hover:text-ink active:scale-90 disabled:cursor-wait sm:size-7"
           >
             {isNavigating && navDir === "next" ? (
-              <Loader2 size={16} className="animate-spin" />
+              <Loader2 className="size-5 animate-spin sm:size-4" />
             ) : (
-              <ChevronRight size={16} />
+              <ChevronRight className="size-6 sm:size-4" />
             )}
           </button>
           <span
@@ -333,9 +339,7 @@ export function CalendarBoard({
                               openDialog({ mode: "view", event });
                             }}
                             title={`Ver "${event.title}"`}
-                            className={`flex items-center gap-1.5 rounded-full bg-gradient-to-r from-brand to-brand-dark dark:bg-none dark:bg-lime-from/20 dark:text-lime-from py-2 pl-2.5 pr-3 text-left shadow-sm transition duration-150 ease-out hover:scale-[1.02] hover:shadow-[0_4px_12px_rgba(2,87,92,0.35)] active:scale-95 ${
-                              isPast(event) ? "opacity-60 grayscale" : ""
-                            }`}
+                            className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-brand to-brand-dark dark:bg-none dark:bg-lime-from/20 dark:text-lime-from py-2 pl-2.5 pr-3 text-left shadow-sm transition duration-150 ease-out hover:scale-[1.02] hover:shadow-[0_4px_12px_rgba(2,87,92,0.35)] active:scale-95"
                           >
                             <span className={`size-2 shrink-0 rounded-full bg-gradient-to-b ${statusDot[status]}`} />
                             <div className="min-w-0 flex-1">
@@ -411,7 +415,7 @@ export function CalendarBoard({
               {upcomingEvents.map(renderEventRow)}
               {pastEvents.length > 0 && (
                 <>
-                  <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-ink/50">Já aconteceram</p>
+                  <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-ink/50">Finalizados</p>
                   {pastEvents.map(renderEventRow)}
                 </>
               )}
@@ -451,7 +455,7 @@ export function CalendarBoard({
           footer={
             readOnly ? (
               isPast(viewing) ? (
-                <p className="text-sm font-medium text-ink/60">Este evento já aconteceu.</p>
+                <p className="text-sm font-medium text-ink/60">Este evento está finalizado.</p>
               ) : (
               <ParticipateButton
                 onOptimistic={(joined, mode) => applyOptimistic({ id: viewing.id, joined, mode })}

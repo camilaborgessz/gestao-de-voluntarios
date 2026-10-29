@@ -17,6 +17,7 @@ import { initialReminderMarks } from "@/lib/notifications";
 import { eventArchiveDaysLeft, noticeArchiveDaysLeft, ARCHIVE_DAYS } from "@/lib/archive";
 import { getVerseOfTheDay } from "@/lib/verse-of-the-day";
 import { VERSES } from "@/lib/verses-arc";
+import { resolveAppUrl } from "@/lib/app-url";
 import { passwordProblem, MIN_PASSWORD_LENGTH, TOKEN_TTL_MS } from "@/lib/password-tokens";
 
 describe("nome do cônjuge (spouse-key)", () => {
@@ -147,5 +148,27 @@ describe("regras de senha e de links", () => {
   test("convite vale 72 horas e recuperação, 30 minutos", () => {
     assert.equal(TOKEN_TTL_MS.INVITE, 72 * 3_600_000);
     assert.equal(TOKEN_TTL_MS.RESET, 30 * 60_000);
+  });
+});
+
+describe("endereço usado nos links dos e-mails (app-url)", () => {
+  const online = { onVercel: true, productionHost: "adkoinonia.vercel.app" };
+  test("usa o APP_URL configurado, sem barra no final", () => {
+    assert.equal(resolveAppUrl({ ...online, appUrl: "https://meusite.com.br/" }), "https://meusite.com.br");
+  });
+  test("online, ignora um APP_URL que aponta para localhost (.env de desenvolvimento copiado)", () => {
+    assert.equal(resolveAppUrl({ ...online, appUrl: "http://localhost:3000" }), "https://adkoinonia.vercel.app");
+    assert.equal(resolveAppUrl({ ...online, appUrl: "http://127.0.0.1:3000" }), "https://adkoinonia.vercel.app");
+  });
+  test("online, sem APP_URL, usa o domínio de produção da Vercel", () => {
+    assert.equal(resolveAppUrl({ ...online }), "https://adkoinonia.vercel.app");
+  });
+  test("no computador do desenvolvedor, localhost continua valendo", () => {
+    assert.equal(resolveAppUrl({ onVercel: false, appUrl: "http://localhost:3000" }), "http://localhost:3000");
+  });
+  test("sem nada configurado, usa o endereço da requisição; sem requisição, nada", () => {
+    assert.equal(resolveAppUrl({ onVercel: false, requestHost: "exemplo.com.br" }), "https://exemplo.com.br");
+    assert.equal(resolveAppUrl({ onVercel: false, requestHost: "localhost:3000" }), "http://localhost:3000");
+    assert.equal(resolveAppUrl({ onVercel: false }), null);
   });
 });

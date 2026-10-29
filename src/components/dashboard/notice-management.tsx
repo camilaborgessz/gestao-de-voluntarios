@@ -73,6 +73,7 @@ export function NoticeManagement({ notices }: { notices: NoticeRecord[] }) {
 
       <NoticesCard
         notices={displayNotices}
+        phoneChunks
         editable
         onEdit={(notice) => {
           const record = findRecord(notice.id);

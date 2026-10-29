@@ -9,6 +9,7 @@ import { ParticipateButton } from "./participate-button";
 import { ShowMoreToggle } from "./show-more-toggle";
 import { formatEventSchedule } from "@/lib/event-schedule";
 import { applyParticipation } from "@/lib/optimistic-participation";
+import { useWallClockNow } from "./use-wall-clock-now";
 import { deleteEvent } from "@/app/dashboard/eventos/novo/actions";
 import type { EventRecord } from "./event-management";
 
@@ -57,7 +58,7 @@ export function UpcomingEventsList({
 }) {
   // Joining / leaving shows up instantly; the server data replaces it as soon as it arrives.
   const [events, applyOptimistic] = useOptimistic(serverEvents, applyParticipation);
-  const nowMs = new Date(nowIso).getTime();
+  const nowMs = useWallClockNow(nowIso);
   const isPast = (event: EventRecord) => event.startsAt.getTime() <= nowMs;
   const [dialog, setDialog] = useState<DialogState>({ mode: "closed" });
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -84,15 +85,17 @@ export function UpcomingEventsList({
     });
   }
 
+  // Volunteers only see events that have not started: at the start time the event leaves "Próximos eventos".
+  const listEvents = readOnly ? events.filter((event) => !isPast(event)) : events;
   const counts: Record<Filter, number> = {
-    all: events.length,
-    joined: events.filter((event) => event.joined).length,
-    available: events.filter(isAvailable).length,
+    all: listEvents.length,
+    joined: listEvents.filter((event) => event.joined).length,
+    available: listEvents.filter(isAvailable).length,
   };
   const filteredEvents =
     !readOnly || filter === "all"
-      ? events
-      : events.filter((event) => (filter === "joined" ? !!event.joined : isAvailable(event)));
+      ? listEvents
+      : listEvents.filter((event) => (filter === "joined" ? !!event.joined : isAvailable(event)));
 
   const viewing = dialog.mode === "view" ? (events.find((e) => e.id === dialog.event.id) ?? dialog.event) : null;
 
@@ -148,7 +151,7 @@ export function UpcomingEventsList({
             participation={
               readOnly ? (
                 isPast(event) ? (
-                  <p className="text-sm font-medium text-ink/60">Já aconteceu</p>
+                  <p className="text-sm font-medium text-ink/60">Finalizado</p>
                 ) : (
                   <ParticipateButton
                     onOptimistic={(joined, mode) => applyOptimistic({ id: event.id, joined, mode })}
@@ -189,7 +192,7 @@ export function UpcomingEventsList({
           footer={
             readOnly ? (
               isPast(viewing) ? (
-                <p className="text-sm font-medium text-ink/60">Este evento já aconteceu.</p>
+                <p className="text-sm font-medium text-ink/60">Este evento está finalizado.</p>
               ) : (
                 <ParticipateButton
                   onOptimistic={(joined, mode) => applyOptimistic({ id: viewing.id, joined, mode })}

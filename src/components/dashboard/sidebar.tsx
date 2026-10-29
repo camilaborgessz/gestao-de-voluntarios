@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -45,9 +45,9 @@ export function Sidebar({ role }: { role: string }) {
       style={{ viewTransitionName: "dash-sidebar" }}
     >
       <div className="flex min-h-0 w-[76px] flex-1 flex-col justify-center overflow-y-auto [scrollbar-width:none]">
-        <Image src="/sidebar-cap-top.png" alt="" width={76} height={129} className="hidden tall:block" unoptimized />
+        <Image src="/sidebar-cap-top.png" alt="" width={76} height={129} className="block h-[clamp(56px,calc((100dvh_-_408px)/2),129px)] w-[76px] tall:h-[clamp(56px,calc((100dvh_-_433px)/2),129px)]" unoptimized />
 
-        <nav className="flex w-full -ml-px flex-col items-center gap-4 rounded-r-3xl bg-brand py-4 tall:rounded-none tall:py-0">
+        <nav className="flex w-full -ml-px flex-col items-center gap-4 bg-brand">
           {visibleItems.map(({ href, label, icon: Icon }) => {
             const active = activePath === href;
             return (
@@ -69,7 +69,7 @@ export function Sidebar({ role }: { role: string }) {
           })}
         </nav>
 
-        <Image src="/sidebar-cap-bottom.png" alt="" width={76} height={129} className="hidden tall:block" unoptimized />
+        <Image src="/sidebar-cap-bottom.png" alt="" width={76} height={129} className="block h-[clamp(56px,calc((100dvh_-_408px)/2),129px)] w-[76px] tall:h-[clamp(56px,calc((100dvh_-_433px)/2),129px)]" unoptimized />
       </div>
 
       <button
