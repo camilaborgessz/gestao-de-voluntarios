@@ -36,6 +36,7 @@ import { DEFAULT_SCHEDULE_TITLE, NEW_SLOT_PREFIX } from "@/lib/schedule-defaults
 import { describeEventDate, personChipText, renderScheduleImage, type ScheduleImageData } from "@/lib/schedule-image";
 import { Modal } from "./modal";
 import { ConfirmDialog } from "./confirm-dialog";
+import { VolunteerPicker } from "./volunteer-picker";
 
 export interface SchedulePerson {
   enrollmentId: string;
@@ -225,6 +226,7 @@ export function ScheduleBoard({
   const [peopleError, setPeopleError] = useState<string | null>(null);
   const [addUserId, setAddUserId] = useState("");
   const [addAsCouple, setAddAsCouple] = useState(false);
+  const [pickerKey, setPickerKey] = useState(0); // new key = empty picker
   const [isChangingPeople, startPeopleChange] = useTransition();
 
   const { weekdayLong, dateFull, time } = describeEventDate(startsAt);
@@ -517,6 +519,7 @@ export function ScheduleBoard({
       resetHistory();
       setAddUserId("");
       setAddAsCouple(false);
+      setPickerKey((key) => key + 1);
     });
   }
 
@@ -738,24 +741,19 @@ export function ScheduleBoard({
             )}
           </DropZone>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <select
-              aria-label="Adicionar voluntário ao evento"
+          <div className="mt-4 flex flex-col gap-2 rounded-[10px] bg-brand/5 p-3 sm:flex-row sm:flex-wrap sm:items-center sm:bg-transparent sm:p-0">
+            <p className="text-sm font-semibold text-ink sm:hidden">Adicionar voluntário ao evento</p>
+            <VolunteerPicker
+              key={pickerKey}
+              users={addableUsers}
               value={addUserId}
-              onChange={(event) => {
-                setAddUserId(event.target.value);
+              disabled={isChangingPeople}
+              onChange={(userId) => {
+                setAddUserId(userId);
                 setAddAsCouple(false);
               }}
-              disabled={isChangingPeople || addableUsers.length === 0}
-              className={`${inputClass} min-w-0 flex-1 sm:max-w-xs`}
-            >
-              <option value="">{addableUsers.length === 0 ? "Todos já estão no evento" : "Adicionar voluntário ao evento…"}</option>
-              {addableUsers.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.name}
-                </option>
-              ))}
-            </select>
+              className="w-full min-w-0 sm:max-w-xs sm:flex-1"
+            />
             {chosenUser?.hasSpouse && (
               <label className="flex items-center gap-1.5 text-sm text-ink">
                 <input type="checkbox" checked={addAsCouple} onChange={(event) => setAddAsCouple(event.target.checked)} />
@@ -766,7 +764,7 @@ export function ScheduleBoard({
               type="button"
               onClick={addVolunteer}
               disabled={!chosenUser || isChangingPeople}
-              className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-brand to-brand-dark px-4 py-2 text-sm font-bold text-white transition duration-150 ease-out hover:brightness-110 active:scale-95 disabled:opacity-50 dark:bg-none dark:bg-lime-from dark:text-brand"
+              className="flex w-full items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-brand to-brand-dark px-5 py-2.5 text-sm font-bold text-white transition duration-150 ease-out hover:brightness-110 active:scale-95 disabled:opacity-50 sm:w-auto sm:py-2 dark:bg-none dark:bg-lime-from dark:text-brand"
             >
               {isChangingPeople && !removing ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} strokeWidth={2.5} />}
               Adicionar
